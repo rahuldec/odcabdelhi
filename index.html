@@ -1,0 +1,1101 @@
+<title>Fleet Cab Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+
+<style>
+  :root {
+    --navy: #1B2A4A;
+    --navy-light: #243559;
+    --blue: #3B7DD8;
+    --blue-light: #5B9AEF;
+    --bg: #F0F4FA;
+    --surface: #FFFFFF;
+    --surface2: #F7F9FD;
+    --border: #DDE4F0;
+    --text: #1B2A4A;
+    --text-muted: #6B7A99;
+    --green: #16A34A;
+    --green-bg: #DCFCE7;
+    --amber: #D97706;
+    --amber-bg: #FEF3C7;
+    --red: #DC2626;
+    --red-bg: #FEE2E2;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(27,42,74,0.08), 0 4px 16px rgba(27,42,74,0.06);
+    --shadow-sm: 0 1px 2px rgba(27,42,74,0.06);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --navy: #E2E8F7;
+      --navy-light: #2A3C60;
+      --bg: #111827;
+      --surface: #1E2B40;
+      --surface2: #243452;
+      --border: #2D3E5C;
+      --text: #E2E8F7;
+      --text-muted: #7A8FAE;
+      --green-bg: #052E16;
+      --amber-bg: #422006;
+      --red-bg: #450A0A;
+      --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.2);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --navy: #E2E8F7;
+    --navy-light: #2A3C60;
+    --bg: #111827;
+    --surface: #1E2B40;
+    --surface2: #243452;
+    --border: #2D3E5C;
+    --text: #E2E8F7;
+    --text-muted: #7A8FAE;
+    --green-bg: #052E16;
+    --amber-bg: #422006;
+    --red-bg: #450A0A;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.2);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Header */
+  .header {
+    background: var(--navy-light);
+    background: linear-gradient(135deg, #1B2A4A 0%, #243E72 100%);
+    padding: 20px 20px 16px;
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: 10;
+  }
+
+  .header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--blue);
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+  }
+
+  .logo-text {
+    color: #fff;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: -0.3px;
+  }
+
+  .logo-sub {
+    color: rgba(255,255,255,0.55);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .header-date {
+    color: rgba(255,255,255,0.6);
+    font-size: 12px;
+    font-weight: 500;
+    text-align: right;
+  }
+
+  .header-date strong {
+    display: block;
+    color: rgba(255,255,255,0.9);
+    font-size: 13px;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    background: var(--navy-light);
+    background: linear-gradient(135deg, #1B2A4A 0%, #243E72 100%);
+    padding: 0 20px 16px;
+    gap: 4px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 8px 6px;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: rgba(255,255,255,0.55);
+    background: transparent;
+    letter-spacing: 0.2px;
+  }
+
+  .tab-btn.active {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+  }
+
+  /* Content */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 16px 80px;
+  }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* Stat cards */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 14px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+  }
+
+  .stat-card.wide {
+    grid-column: 1 / -1;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+
+  .stat-unit {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-left: 2px;
+  }
+
+  .stat-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 3px;
+  }
+
+  .stat-icon {
+    font-size: 22px;
+    margin-bottom: 8px;
+  }
+
+  /* Section header */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    margin-top: 4px;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.1px;
+  }
+
+  .section-count {
+    font-size: 11px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+
+  /* Trip card */
+  .trip-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+
+  .trip-card:active {
+    transform: scale(0.99);
+  }
+
+  .trip-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .trip-date {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+
+  .trip-km {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--blue);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .trip-km span { font-size: 12px; color: var(--text-muted); font-family: 'Inter', sans-serif; font-weight: 500; }
+
+  .trip-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .trip-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+
+  .trip-chip.fuel { background: var(--amber-bg); color: var(--amber); border-color: transparent; }
+  .trip-chip.location { background: var(--green-bg); color: var(--green); border-color: transparent; }
+
+  .trip-photo {
+    width: 100%;
+    max-height: 160px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-top: 10px;
+    display: block;
+  }
+
+  .trip-note {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 8px;
+    font-style: italic;
+  }
+
+  .delete-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    line-height: 1;
+    transition: color 0.15s, background 0.15s;
+  }
+
+  .delete-btn:hover { color: var(--red); background: var(--red-bg); }
+
+  /* Form */
+  .form-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+
+  .form-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 16px;
+    letter-spacing: -0.2px;
+  }
+
+  .field-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .field {
+    margin-bottom: 12px;
+  }
+
+  label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+
+  input, textarea, select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--surface2);
+    transition: border-color 0.15s;
+    outline: none;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--blue);
+    background: var(--surface);
+  }
+
+  /* Photo upload zone */
+  .photo-zone {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 20px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    background: var(--surface2);
+    position: relative;
+  }
+
+  .photo-zone:hover, .photo-zone.drag-over {
+    border-color: var(--blue);
+    background: rgba(59,125,216,0.05);
+  }
+
+  .photo-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: none;
+    background: none;
+  }
+
+  .photo-zone-icon { font-size: 28px; margin-bottom: 6px; }
+
+  .photo-zone-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--blue);
+    margin-bottom: 3px;
+  }
+
+  .photo-zone-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .photo-btns {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    pointer-events: none;
+  }
+
+  .photo-btn {
+    flex: 1;
+    padding: 8px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    pointer-events: all;
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .photo-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+  .photo-previews {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .photo-thumb {
+    position: relative;
+    width: calc(50% - 4px);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+  }
+
+  .photo-thumb img {
+    width: 100%;
+    height: 110px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .photo-thumb-remove {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    display: grid;
+    place-items: center;
+    line-height: 1;
+    transition: background 0.15s;
+  }
+
+  .photo-thumb-remove:hover { background: var(--red); }
+
+  .photo-size-badge {
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  textarea { resize: vertical; min-height: 70px; }
+
+  .btn {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.2px;
+  }
+
+  .btn-primary {
+    background: var(--blue);
+    color: #fff;
+  }
+
+  .btn-primary:hover { background: var(--blue-light); }
+  .btn-primary:active { transform: scale(0.99); }
+
+  /* Empty state */
+  .empty {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-muted);
+  }
+
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty h3 { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .empty p { font-size: 13px; }
+
+  /* Chart bar */
+  .chart-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .chart-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    width: 28px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .chart-bar-wrap {
+    flex: 1;
+    height: 22px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .chart-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--blue) 0%, var(--blue-light) 100%);
+    border-radius: 4px;
+    transition: width 0.4s ease;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 6px;
+    min-width: 2px;
+  }
+
+  .chart-bar-val {
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .month-section { margin-bottom: 20px; }
+
+  .odometer-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    margin-bottom: 4px;
+  }
+
+  .odo-arrow {
+    color: var(--text-muted);
+    font-size: 16px;
+    padding-bottom: 2px;
+  }
+
+  .required-star { color: var(--red); }
+
+  .fuel-eff-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--blue);
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--navy);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 24px;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 100;
+    transition: transform 0.3s ease;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+  }
+</style>
+
+<div class="app">
+  <div class="header">
+    <div class="header-row">
+      <div class="logo">
+        <div class="logo-icon">🚕</div>
+        <div>
+          <div class="logo-text">FleetLog</div>
+          <div class="logo-sub">Cab Tracker</div>
+        </div>
+      </div>
+      <div class="header-date" id="headerDate"></div>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+    <button class="tab-btn" onclick="switchTab('add')">＋ Add Trip</button>
+    <button class="tab-btn" onclick="switchTab('history')">📋 History</button>
+  </div>
+
+  <div class="content">
+    <!-- DASHBOARD -->
+    <div class="view active" id="view-dashboard">
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="form-card" id="chartCard" style="display:none">
+        <div class="form-title">KM by Month</div>
+        <div id="kmChart"></div>
+      </div>
+      <div class="section-header">
+        <div class="section-title">Recent Trips</div>
+        <div class="section-count" id="recentCount">0 trips</div>
+      </div>
+      <div id="recentTrips"></div>
+    </div>
+
+    <!-- ADD TRIP -->
+    <div class="view" id="view-add">
+      <div class="form-card">
+        <div class="form-title">Log a New Trip</div>
+        <div class="field">
+          <label>Date <span class="required-star">*</span></label>
+          <input type="date" id="tripDate">
+        </div>
+        <div class="field">
+          <label>Cab / Vehicle ID</label>
+          <input type="text" id="cabId" placeholder="e.g. MH-12-AB-1234">
+        </div>
+        <div class="field">
+          <label>Driver Name</label>
+          <input type="text" id="driverName" placeholder="Driver's name">
+        </div>
+        <div class="field">
+          <label>Odometer Readings (KM) <span class="required-star">*</span></label>
+          <div class="odometer-row">
+            <div style="flex:1">
+              <input type="number" id="startKm" placeholder="Start KM" min="0">
+            </div>
+            <div class="odo-arrow">→</div>
+            <div style="flex:1">
+              <input type="number" id="endKm" placeholder="End KM" min="0">
+            </div>
+          </div>
+        </div>
+        <div class="field-group">
+          <div class="field" style="margin-bottom:0">
+            <label>Fuel Added (L)</label>
+            <input type="number" id="fuelLitres" placeholder="0.0" step="0.1" min="0">
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label>Fuel Cost (₹)</label>
+            <input type="number" id="fuelCost" placeholder="0" min="0">
+          </div>
+        </div>
+        <div class="field" style="margin-top:12px">
+          <label>Route / Location</label>
+          <input type="text" id="tripLocation" placeholder="e.g. Office → Airport">
+        </div>
+        <div class="field">
+          <label>Purpose / Notes</label>
+          <textarea id="tripNotes" placeholder="Trip purpose or remarks…"></textarea>
+        </div>
+        <div class="field">
+          <label>Photos (Odometer / Fuel Receipt)</label>
+          <div class="photo-zone" id="photoZone">
+            <input type="file" id="tripPhoto" accept="image/*" multiple>
+            <div class="photo-zone-icon">📷</div>
+            <div class="photo-zone-label">Tap to add photos</div>
+            <div class="photo-zone-hint">Drag & drop · Gallery · Camera</div>
+            <div class="photo-btns">
+              <label class="photo-btn" style="cursor:pointer">
+                <span>🖼</span> Gallery
+                <input type="file" accept="image/*" multiple style="display:none;position:static;opacity:1;width:0;height:0" onchange="handlePhotoFiles(this.files)">
+              </label>
+              <label class="photo-btn" style="cursor:pointer">
+                <span>📸</span> Camera
+                <input type="file" accept="image/*" capture="environment" style="display:none;position:static;opacity:1;width:0;height:0" onchange="handlePhotoFiles(this.files)">
+              </label>
+            </div>
+          </div>
+          <div class="photo-previews" id="photoPreviews"></div>
+        </div>
+        <button class="btn btn-primary" onclick="saveTrip()">Save Trip</button>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="view" id="view-history">
+      <div class="section-header">
+        <div class="section-title">All Trips</div>
+        <div class="section-count" id="historyCount">0 trips</div>
+      </div>
+      <div id="allTrips"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const STORE_KEY = 'fleetlog_trips_v1';
+
+  function loadTrips() {
+    try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; }
+    catch { return []; }
+  }
+
+  function saveTrips(trips) {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(trips)); } catch {}
+  }
+
+  // Set today's date default
+  document.getElementById('tripDate').value = new Date().toISOString().split('T')[0];
+
+  // Header date
+  const now = new Date();
+  const hd = document.getElementById('headerDate');
+  hd.innerHTML = `<strong>${now.toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'short' })}</strong>${now.getFullYear()}`;
+
+  function switchTab(tab) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('view-' + tab).classList.add('active');
+    const tabs = ['dashboard','add','history'];
+    document.querySelectorAll('.tab-btn')[tabs.indexOf(tab)].classList.add('active');
+    if (tab === 'dashboard') renderDashboard();
+    if (tab === 'history') renderHistory();
+  }
+
+  const DRIVE_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwCnenzCVJ2x-9rkE_m0LgCW4ilNkM48ZyNN5ievwVcfq3MmHUMeOkKWVCRHdxqDTkI1A/exec';
+
+  // pendingPhotos: [{driveUrl, localPreview, uploading, error}]
+  let pendingPhotos = [];
+
+  function compressImage(file, maxW = 1200, quality = 0.78) {
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, maxW / Math.max(img.width, img.height));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function uploadToDrive(base64, filename) {
+    const res = await fetch(DRIVE_ENDPOINT, {
+      method: 'POST',
+      body: JSON.stringify({ base64, filename })
+    });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'Upload failed');
+    return json.url;
+  }
+
+  async function saveTripToSheet(trip) {
+    try {
+      await fetch(DRIVE_ENDPOINT, {
+        method: 'POST',
+        body: JSON.stringify({ trip })
+      });
+    } catch (err) {
+      console.warn('Sheet save failed:', err);
+    }
+  }
+
+  function renderPhotoPreviews() {
+    const container = document.getElementById('photoPreviews');
+    container.innerHTML = pendingPhotos.map((p, i) => `
+      <div class="photo-thumb">
+        <img src="${p.localPreview}" alt="Photo ${i+1}">
+        ${p.uploading ? `<div style="position:absolute;inset:0;background:rgba(0,0,0,0.45);display:grid;place-items:center;border-radius:8px">
+          <div style="color:#fff;font-size:11px;font-weight:700">Uploading…</div></div>` : ''}
+        ${p.error ? `<div style="position:absolute;inset:0;background:rgba(220,38,38,0.6);display:grid;place-items:center;border-radius:8px">
+          <div style="color:#fff;font-size:11px;font-weight:700;text-align:center;padding:4px">⚠ Failed<br><span style="font-weight:400;font-size:10px">tap ✕ to retry</span></div></div>` : ''}
+        ${p.driveUrl ? `<div class="photo-size-badge">✓ Drive</div>` : ''}
+        <button class="photo-thumb-remove" onclick="removePhoto(${i})" title="Remove">✕</button>
+      </div>
+    `).join('');
+  }
+
+  function removePhoto(idx) {
+    pendingPhotos.splice(idx, 1);
+    renderPhotoPreviews();
+  }
+
+  async function handlePhotoFiles(files) {
+    if (!files || !files.length) return;
+    const MAX = 5;
+    if (pendingPhotos.length >= MAX) { showToast('Max 5 photos per trip'); return; }
+    const toAdd = Array.from(files).slice(0, MAX - pendingPhotos.length);
+
+    for (const file of toAdd) {
+      const localPreview = await compressImage(file);
+      const idx = pendingPhotos.length;
+      pendingPhotos.push({ localPreview, driveUrl: null, uploading: true, error: false });
+      renderPhotoPreviews();
+
+      try {
+        const driveUrl = await uploadToDrive(localPreview, `cab_${Date.now()}_${idx}.jpg`);
+        pendingPhotos[idx].driveUrl = driveUrl;
+        pendingPhotos[idx].uploading = false;
+        showToast('☁️ Photo saved to Drive');
+      } catch (err) {
+        pendingPhotos[idx].uploading = false;
+        pendingPhotos[idx].error = true;
+        showToast('⚠️ Upload failed — check connection');
+      }
+      renderPhotoPreviews();
+    }
+  }
+
+  // Wire up the main zone file input and drag-drop
+  document.getElementById('tripPhoto').addEventListener('change', function() {
+    handlePhotoFiles(this.files);
+    this.value = '';
+  });
+
+  const zone = document.getElementById('photoZone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    handlePhotoFiles(e.dataTransfer.files);
+  });
+
+  function saveTrip() {
+    const date = document.getElementById('tripDate').value;
+    const startKm = parseFloat(document.getElementById('startKm').value);
+    const endKm = parseFloat(document.getElementById('endKm').value);
+    if (!date) { showToast('⚠️ Please pick a date'); return; }
+    if (isNaN(startKm) || isNaN(endKm)) { showToast('⚠️ Enter start and end KM'); return; }
+    if (endKm <= startKm) { showToast('⚠️ End KM must be greater than start KM'); return; }
+    if (pendingPhotos.some(p => p.uploading)) { showToast('⏳ Photos still uploading, please wait…'); return; }
+
+    const trip = {
+      id: Date.now(),
+      date,
+      cabId: document.getElementById('cabId').value.trim(),
+      driverName: document.getElementById('driverName').value.trim(),
+      startKm, endKm,
+      km: endKm - startKm,
+      fuelLitres: parseFloat(document.getElementById('fuelLitres').value) || 0,
+      fuelCost: parseFloat(document.getElementById('fuelCost').value) || 0,
+      location: document.getElementById('tripLocation').value.trim(),
+      notes: document.getElementById('tripNotes').value.trim(),
+      photos: pendingPhotos.filter(p => p.driveUrl).map(p => p.driveUrl)
+    };
+
+    const trips = loadTrips();
+    trips.unshift(trip);
+    saveTrips(trips);
+
+    // Save to Google Sheet in background
+    saveTripToSheet(trip);
+
+    // Reset form
+    document.getElementById('startKm').value = '';
+    document.getElementById('endKm').value = '';
+    document.getElementById('fuelLitres').value = '';
+    document.getElementById('fuelCost').value = '';
+    document.getElementById('tripLocation').value = '';
+    document.getElementById('tripNotes').value = '';
+    document.getElementById('tripPhoto').value = '';
+    pendingPhotos = [];
+    renderPhotoPreviews();
+    document.getElementById('tripDate').value = new Date().toISOString().split('T')[0];
+
+    showToast('✅ Trip saved!');
+    switchTab('dashboard');
+  }
+
+  function deleteTrip(id) {
+    if (!confirm('Delete this trip?')) return;
+    const trips = loadTrips().filter(t => t.id !== id);
+    saveTrips(trips);
+    renderDashboard();
+    renderHistory();
+    showToast('🗑 Trip deleted');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function fmtDate(d) {
+    return new Date(d + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function tripCardHTML(trip, showDelete = true) {
+    const eff = trip.fuelLitres > 0 ? (trip.km / trip.fuelLitres).toFixed(1) : null;
+    return `
+      <div class="trip-card">
+        <div class="trip-header">
+          <div>
+            <div class="trip-date">${fmtDate(trip.date)}${trip.cabId ? ' · ' + trip.cabId : ''}${trip.driverName ? ' · ' + trip.driverName : ''}</div>
+            <div class="trip-km">${trip.km.toFixed(1)}<span> km</span></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            ${eff ? `<div class="fuel-eff-badge">⛽ ${eff} km/L</div>` : ''}
+            ${showDelete ? `<button class="delete-btn" onclick="event.stopPropagation();deleteTrip(${trip.id})" title="Delete">✕</button>` : ''}
+          </div>
+        </div>
+        <div class="trip-meta">
+          <div class="trip-chip">🛣 ${trip.startKm} → ${trip.endKm} km</div>
+          ${trip.fuelCost > 0 ? `<div class="trip-chip fuel">₹${trip.fuelCost}${trip.fuelLitres > 0 ? ' · ' + trip.fuelLitres + 'L' : ''}</div>` : ''}
+          ${trip.location ? `<div class="trip-chip location">📍 ${trip.location}</div>` : ''}
+        </div>
+        ${trip.notes ? `<div class="trip-note">${trip.notes}</div>` : ''}
+        ${(() => {
+          const imgs = trip.photos && trip.photos.length ? trip.photos : (trip.photo ? [trip.photo] : []);
+          if (!imgs.length) return '';
+          return `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">${imgs.map(src =>
+            `<img src="${src}" style="width:calc(50% - 3px);height:100px;object-fit:cover;border-radius:7px;display:block" loading="lazy">`
+          ).join('')}</div>`;
+        })()}
+      </div>
+    `;
+  }
+
+  function renderDashboard() {
+    const trips = loadTrips();
+    const totalKm = trips.reduce((s, t) => s + t.km, 0);
+    const totalFuel = trips.reduce((s, t) => s + t.fuelCost, 0);
+    const totalLitres = trips.reduce((s, t) => s + t.fuelLitres, 0);
+    const avgEff = totalLitres > 0 ? (totalKm / totalLitres).toFixed(1) : '—';
+
+    document.getElementById('statsGrid').innerHTML = `
+      <div class="stat-card">
+        <div class="stat-icon">🛣</div>
+        <div class="stat-label">Total KM</div>
+        <div class="stat-value">${totalKm.toFixed(0)}<span class="stat-unit">km</span></div>
+        <div class="stat-sub">${trips.length} trips logged</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-label">Fuel Spent</div>
+        <div class="stat-value">₹${totalFuel.toLocaleString('en-IN')}</div>
+        <div class="stat-sub">${totalLitres.toFixed(1)} litres total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⛽</div>
+        <div class="stat-label">Avg Efficiency</div>
+        <div class="stat-value">${avgEff}<span class="stat-unit">${avgEff !== '—' ? ' km/L' : ''}</span></div>
+        <div class="stat-sub">Overall fleet avg</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📅</div>
+        <div class="stat-label">This Month</div>
+        <div class="stat-value">${(() => {
+          const m = new Date().toISOString().slice(0,7);
+          return trips.filter(t => t.date.startsWith(m)).reduce((s,t) => s + t.km, 0).toFixed(0);
+        })()}<span class="stat-unit">km</span></div>
+        <div class="stat-sub">In ${new Date().toLocaleDateString('en-IN',{month:'long'})}</div>
+      </div>
+    `;
+
+    // Chart
+    const byMonth = {};
+    trips.forEach(t => {
+      const m = t.date.slice(0,7);
+      byMonth[m] = (byMonth[m] || 0) + t.km;
+    });
+    const months = Object.keys(byMonth).sort().slice(-6);
+    if (months.length > 0) {
+      const maxKm = Math.max(...months.map(m => byMonth[m]));
+      document.getElementById('chartCard').style.display = 'block';
+      document.getElementById('kmChart').innerHTML = months.map(m => {
+        const pct = maxKm > 0 ? (byMonth[m] / maxKm * 100) : 0;
+        const label = new Date(m + '-01').toLocaleDateString('en-IN', { month:'short' }).slice(0,3);
+        return `
+          <div class="chart-row">
+            <div class="chart-label">${label}</div>
+            <div class="chart-bar-wrap">
+              <div class="chart-bar" style="width:${pct}%">
+                <span class="chart-bar-val">${pct > 25 ? byMonth[m].toFixed(0) : ''}</span>
+              </div>
+            </div>
+            ${pct <= 25 ? `<span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text-muted);font-weight:600">${byMonth[m].toFixed(0)}</span>` : ''}
+          </div>
+        `;
+      }).join('');
+    } else {
+      document.getElementById('chartCard').style.display = 'none';
+    }
+
+    const recent = trips.slice(0, 5);
+    document.getElementById('recentCount').textContent = trips.length + ' trips';
+    document.getElementById('recentTrips').innerHTML = recent.length > 0
+      ? recent.map(t => tripCardHTML(t)).join('')
+      : `<div class="empty"><div class="empty-icon">🚕</div><h3>No trips yet</h3><p>Tap "+ Add Trip" to log your first trip.</p></div>`;
+  }
+
+  function renderHistory() {
+    const trips = loadTrips();
+    document.getElementById('historyCount').textContent = trips.length + ' trips';
+    document.getElementById('allTrips').innerHTML = trips.length > 0
+      ? trips.map(t => tripCardHTML(t)).join('')
+      : `<div class="empty"><div class="empty-icon">📋</div><h3>No trips recorded</h3><p>Your complete trip history will appear here.</p></div>`;
+  }
+
+  // Initial render
+  renderDashboard();
+</script>
