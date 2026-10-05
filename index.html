@@ -2,417 +2,465 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>OD Cab Tracker</title>
 <link rel="icon" type="image/png" href="logo.png">
 <style>
 :root {
-  --ink: #1D1D1F; --body: #6E6E73; --faint: #86868B;
-  --page: #F5F5F7; --card: #FFFFFF; --line: #D2D2D7; --hair: rgba(0,0,0,.07);
-  --brand: #EC6724; --brand-dark: #C4501A; --brand-soft: #FDF0E8;
-  --deep: #821D13;
-  --ok: #2E7D32; --ok-soft: #E9F5EA;
-  --warn: #B8860B; --warn-soft: #FBF3DE;
-  --bad: #A82A1C; --bad-soft: #FBEDEB;
+  --ink:#1D1D1F; --body:#6E6E73; --faint:#86868B;
+  --page:#F0F0F5; --card:#FFFFFF; --line:#D2D2D7; --hair:rgba(0,0,0,.06);
+  --brand:#EC6724; --brand-dark:#C4501A; --brand-soft:#FDF0E8;
+  --deep:#821D13;
+  --ok:#2E7D32; --ok-soft:#E9F5EA;
+  --warn:#B8860B; --warn-soft:#FBF3DE;
+  --bad:#A82A1C; --bad-soft:#FBEDEB;
+  --sidebar-w:220px;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --ink:#F2F2F5; --body:#A9A9B2; --faint:#8B8B93;
-    --page:#111113; --card:#1C1C1F; --line:#313135; --hair:rgba(255,255,255,.08);
-    --brand:#EC6724; --brand-dark:#FF8A4C; --brand-soft:#3A2417; --deep:#E8998E;
-    --ok:#5FB86B; --ok-soft:#16281A; --warn:#D9A83B; --warn-soft:#2E2510;
-    --bad:#E8695B; --bad-soft:#331715;
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ink:#F2F2F5;--body:#A9A9B2;--faint:#8B8B93;
+    --page:#111113;--card:#1C1C1F;--line:#313135;--hair:rgba(255,255,255,.07);
+    --brand:#EC6724;--brand-dark:#FF8A4C;--brand-soft:#3A2417;--deep:#E8998E;
+    --ok:#5FB86B;--ok-soft:#16281A;--warn:#D9A83B;--warn-soft:#2E2510;
+    --bad:#E8695B;--bad-soft:#331715;
   }
 }
-:root[data-theme="dark"] {
-  --ink:#F2F2F5; --body:#A9A9B2; --faint:#8B8B93;
-  --page:#111113; --card:#1C1C1F; --line:#313135; --hair:rgba(255,255,255,.08);
-  --brand:#EC6724; --brand-dark:#FF8A4C; --brand-soft:#3A2417; --deep:#E8998E;
-  --ok:#5FB86B; --ok-soft:#16281A; --warn:#D9A83B; --warn-soft:#2E2510;
-  --bad:#E8695B; --bad-soft:#331715;
+:root[data-theme="dark"]{
+  --ink:#F2F2F5;--body:#A9A9B2;--faint:#8B8B93;
+  --page:#111113;--card:#1C1C1F;--line:#313135;--hair:rgba(255,255,255,.07);
+  --brand:#EC6724;--brand-dark:#FF8A4C;--brand-soft:#3A2417;--deep:#E8998E;
+  --ok:#5FB86B;--ok-soft:#16281A;--warn:#D9A83B;--warn-soft:#2E2510;
+  --bad:#E8695B;--bad-soft:#331715;
 }
 
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{
   height:100%;
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Arial,sans-serif;
-  background:var(--page); color:var(--ink);
-  font-size:15px; line-height:1.47; letter-spacing:-.011em;
+  background:var(--page);color:var(--ink);
+  font-size:14px;line-height:1.47;letter-spacing:-.011em;
   -webkit-font-smoothing:antialiased;
 }
-.app{max-width:480px;margin:0 auto;height:100%;display:flex;flex-direction:column}
 
-/* ── HEADER ── */
-.masthead{
-  background:linear-gradient(135deg,#5C1A0A 0%,#821D13 40%,#A8300F 70%,#C4501A 100%);
-  padding:16px 18px 14px;
-  padding-top:calc(16px + env(safe-area-inset-top,0px));
-  position:sticky; top:0; z-index:20;
+/* ── SHELL ── */
+.shell{display:flex;height:100%;overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:var(--sidebar-w);flex-shrink:0;
+  background:linear-gradient(180deg,#5C1A0A 0%,#821D13 35%,#A0290E 70%,#C4501A 100%);
+  display:flex;flex-direction:column;
+  padding:0 0 20px;
+  overflow:hidden;
 }
-.masthead-inner{display:flex;align-items:center;gap:11px}
-.masthead img{width:36px;height:36px;border-radius:9px;flex-shrink:0;object-fit:contain;background:rgba(255,255,255,.12);padding:3px}
-.masthead-name{font-size:17px;font-weight:700;letter-spacing:-.02em;color:#fff;line-height:1.15}
-.masthead-name span{display:block;color:rgba(255,255,255,.6);font-weight:400;font-size:11px;margin-top:1px;letter-spacing:.01em}
-.masthead-right{margin-left:auto;text-align:right}
-.masthead-date{font-size:11px;font-weight:500;color:rgba(255,255,255,.55);line-height:1.4}
-.masthead-date strong{display:block;font-size:13px;font-weight:700;color:rgba(255,255,255,.9)}
+.sb-brand{
+  padding:22px 18px 20px;
+  border-bottom:1px solid rgba(255,255,255,.1);
+  display:flex;align-items:center;gap:11px;
+}
+.sb-brand img{width:38px;height:38px;border-radius:10px;object-fit:contain;background:rgba(255,255,255,.12);padding:3px;flex-shrink:0}
+.sb-brand-name{font-size:15px;font-weight:700;letter-spacing:-.02em;color:#fff;line-height:1.2}
+.sb-brand-name span{display:block;color:rgba(255,255,255,.55);font-weight:400;font-size:11px;letter-spacing:.01em}
 
-/* ── TABS ── */
-.tabs{
+.sb-section{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.35);padding:20px 18px 6px}
+
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  margin:1px 10px;
+  padding:9px 12px;
+  border-radius:10px;
+  cursor:pointer;
+  color:rgba(255,255,255,.65);
+  font-size:13px;font-weight:600;letter-spacing:-.01em;
+  transition:background .15s,color .15s;
+  border:none;background:none;width:calc(100% - 20px);text-align:left;font-family:inherit;
+}
+.nav-item:hover{background:rgba(255,255,255,.1);color:#fff}
+.nav-item.active{background:rgba(255,255,255,.15);color:#fff}
+.nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0}
+
+.sb-bottom{margin-top:auto;padding:16px 18px 0}
+.sb-date{font-size:11px;color:rgba(255,255,255,.4);line-height:1.6}
+.sb-date strong{display:block;color:rgba(255,255,255,.75);font-size:13px;font-weight:600}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+
+.topbar{
   background:var(--card);
-  border-bottom:1px solid var(--line);
-  padding:0 18px;
-  display:flex; gap:0;
+  border-bottom:1px solid var(--hair);
+  padding:14px 28px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
 }
-.tab-btn{
-  flex:1; padding:11px 6px 10px;
-  border:none; background:none;
-  font-family:inherit; font-size:13px; font-weight:600;
-  color:var(--body); cursor:pointer;
-  border-bottom:2.5px solid transparent;
-  transition:color .15s,border-color .15s;
-  letter-spacing:-.01em;
-}
-.tab-btn.active{color:var(--brand);border-bottom-color:var(--brand)}
+.topbar-title{font-size:18px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
+.topbar-sub{font-size:13px;color:var(--body);margin-top:1px}
+.topbar-right{display:flex;gap:10px;align-items:center}
 
-/* ── SCROLL AREA ── */
-.content{flex:1;overflow-y:auto;padding:16px 14px 80px}
-.view{display:none}.view.active{display:block}
+.btn{
+  padding:9px 18px;border:none;border-radius:9px;
+  font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;
+  transition:background .15s,transform .1s;letter-spacing:-.01em;
+}
+.btn-primary{background:var(--brand);color:#fff}
+.btn-primary:hover{background:var(--brand-dark)}
+.btn-ghost{background:var(--page);color:var(--ink);border:1px solid var(--line)}
+.btn-ghost:hover{background:var(--hair)}
 
-/* ── KPI GROUP CARD (same as CRM) ── */
-.kpi-group{
-  background:linear-gradient(135deg,#FDF0E8 0%,#FFF8F4 50%,#FDF0E8 100%);
-  border:1px solid rgba(236,103,36,.18);
-  border-radius:20px;
-  box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
-  margin-bottom:16px; overflow:hidden;
+/* ── VIEWS ── */
+.view{display:none;flex:1;overflow-y:auto;padding:24px 28px 40px}
+.view.active{display:block}
+
+/* ── KPI STRIP ── */
+.kpi-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.kpi-card{
+  background:var(--card);border:1px solid var(--hair);border-radius:16px;
+  padding:18px 18px 16px;
+  box-shadow:0 1px 2px rgba(0,0,0,.04),0 4px 12px rgba(0,0,0,.04);
 }
-.kgi-head{
+.kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.kpi-icon-wrap{
+  width:36px;height:36px;border-radius:10px;
+  background:var(--brand-soft);
   display:flex;align-items:center;justify-content:center;
-  gap:8px; padding:13px 20px 10px; position:relative;
 }
-.kgi-title{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--brand-dark)}
-.kgi-badge{
-  position:absolute;right:16px;
-  font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;
-  background:var(--brand-soft);color:var(--brand-dark);
+.kpi-icon-wrap svg{width:18px;height:18px;color:var(--brand)}
+.kpi-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)}
+.kpi-fig{font-size:28px;font-weight:700;letter-spacing:-.03em;color:var(--ink);line-height:1;font-variant-numeric:tabular-nums}
+.kpi-fig small{font-size:14px;font-weight:500;color:var(--body);letter-spacing:0}
+.kpi-sub{font-size:12px;color:var(--body);margin-top:5px}
+
+/* ── DASH GRID ── */
+.dash-grid{display:grid;grid-template-columns:1fr 380px;gap:18px;align-items:start}
+.dash-main{min-width:0}
+.dash-side{min-width:0}
+
+/* ── CARDS ── */
+.panel{
+  background:var(--card);border:1px solid var(--hair);border-radius:16px;
+  padding:20px;margin-bottom:18px;
+  box-shadow:0 1px 2px rgba(0,0,0,.04),0 4px 12px rgba(0,0,0,.04);
 }
-.kpi-cells{display:flex;border-top:1px solid rgba(236,103,36,.12)}
-.kpi-cell{
-  flex:1;min-width:0;padding:14px 12px 16px;
-  border-right:1px solid rgba(236,103,36,.12);text-align:center;
-}
-.kpi-cell:last-child{border-right:none}
-.kpi-icon{
-  width:32px;height:32px;border-radius:9px;
-  background:rgba(236,103,36,.12);
-  display:flex;align-items:center;justify-content:center;
-  margin:0 auto 9px;
-}
-.kpi-icon svg{width:16px;height:16px;color:var(--brand)}
-.kpi-fig{font-size:20px;font-weight:700;letter-spacing:-.025em;color:var(--ink);line-height:1;font-variant-numeric:tabular-nums}
-.kpi-fig small{font-size:12px;font-weight:500;color:var(--body);letter-spacing:0;margin-left:1px}
-.kpi-lab{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--faint);margin-top:5px}
+.panel-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin-bottom:14px}
 
 /* ── CHART ── */
-.chart-card{
-  background:var(--card);border:1px solid var(--hair);border-radius:16px;
-  padding:16px 14px;margin-bottom:14px;
-  box-shadow:0 1px 2px rgba(0,0,0,.04),0 4px 12px rgba(0,0,0,.04);
-}
-.chart-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);margin-bottom:13px}
-.chart-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
-.chart-label{font-size:11px;font-weight:600;color:var(--faint);width:26px;text-align:right;flex-shrink:0}
-.chart-bar-wrap{flex:1;height:18px;background:var(--page);border-radius:4px;overflow:hidden}
+.chart-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.chart-label{font-size:11px;font-weight:600;color:var(--faint);width:28px;text-align:right;flex-shrink:0}
+.chart-bar-wrap{flex:1;height:22px;background:var(--page);border-radius:5px;overflow:hidden}
 .chart-bar{
-  height:100%;min-width:2px;border-radius:4px;
-  background:linear-gradient(90deg,var(--deep) 0%,var(--brand) 60%,#F5894A 100%);
-  display:flex;align-items:center;justify-content:flex-end;padding-right:5px;
-  transition:width .4s ease;
+  height:100%;min-width:3px;border-radius:5px;
+  background:linear-gradient(90deg,var(--deep) 0%,var(--brand) 55%,#F5894A 100%);
+  display:flex;align-items:center;justify-content:flex-end;padding-right:7px;
+  transition:width .45s ease;
 }
-.chart-bar-val{font-size:9px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums}
+.chart-bar-val{font-size:10px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums}
 
-/* ── SECTION ── */
-.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;margin-top:4px}
-.section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--faint)}
-.section-badge{font-size:11px;font-weight:600;color:var(--body);background:var(--card);border:1px solid var(--line);padding:2px 9px;border-radius:20px}
+/* ── TRIP TABLE ── */
+.trip-table{width:100%;border-collapse:collapse;font-size:13px}
+.trip-table thead th{
+  text-align:left;background:var(--page);color:var(--faint);
+  font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.05em;
+  padding:9px 14px;border-bottom:1px solid var(--hair);
+  white-space:nowrap;
+}
+.trip-table thead th:first-child{border-radius:8px 0 0 0}
+.trip-table thead th:last-child{border-radius:0 8px 0 0}
+.trip-table tbody td{padding:11px 14px;border-bottom:1px solid var(--hair);color:var(--ink);vertical-align:middle}
+.trip-table tbody tr:last-child td{border-bottom:none}
+.trip-table tbody tr:hover{background:var(--brand-soft);cursor:default}
+.td-km{font-size:15px;font-weight:700;color:var(--brand);font-variant-numeric:tabular-nums}
+.td-muted{color:var(--body);font-size:12px}
+.td-photo img{width:44px;height:34px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
+.del-btn{background:none;border:none;color:var(--faint);cursor:pointer;font-size:14px;padding:3px 6px;border-radius:5px;transition:color .15s,background .15s}
+.del-btn:hover{color:var(--bad);background:var(--bad-soft)}
 
-/* ── TRIP CARD ── */
-.trip-card{
-  background:var(--card);border:1px solid var(--hair);border-radius:16px;
-  padding:14px;margin-bottom:10px;
-  box-shadow:0 1px 2px rgba(0,0,0,.04),0 4px 12px rgba(0,0,0,.04);
-}
-.trip-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
-.trip-date{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);margin-bottom:3px}
-.trip-meta-top{display:flex;align-items:baseline;gap:6px}
-.trip-km{font-size:22px;font-weight:700;letter-spacing:-.03em;color:var(--brand);font-variant-numeric:tabular-nums}
-.trip-km small{font-size:12px;font-weight:500;color:var(--body)}
-.trip-sub{font-size:12px;color:var(--body);margin-top:1px}
-.trip-chips{display:flex;gap:6px;flex-wrap:wrap}
-.chip{
-  display:inline-flex;align-items:center;gap:3px;
-  font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;
-  background:var(--page);border:1px solid var(--line);color:var(--body);
-}
+.chip{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px;background:var(--page);border:1px solid var(--line);color:var(--body)}
 .chip.fuel{background:var(--warn-soft);color:var(--warn);border-color:transparent}
 .chip.loc{background:var(--ok-soft);color:var(--ok);border-color:transparent}
 .chip.eff{background:var(--brand-soft);color:var(--brand-dark);border-color:transparent}
-.trip-note{font-size:12px;color:var(--body);margin-top:8px;font-style:italic}
-.trip-photos{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-.trip-photos img{width:calc(50% - 3px);height:100px;object-fit:cover;border-radius:9px;display:block}
-.delete-btn{
-  background:none;border:none;color:var(--faint);cursor:pointer;
-  font-size:14px;padding:3px 5px;border-radius:5px;line-height:1;
-  transition:color .15s,background .15s;flex-shrink:0;margin-top:-2px;
-}
-.delete-btn:hover{color:var(--bad);background:var(--bad-soft)}
 
 /* ── FORM ── */
-.form-card{
-  background:var(--card);border:1px solid var(--hair);border-radius:16px;
-  padding:18px;margin-bottom:12px;
-  box-shadow:0 1px 2px rgba(0,0,0,.04),0 4px 12px rgba(0,0,0,.04);
+.form-wrap{max-width:760px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 18px}
+.form-grid .full{grid-column:1/-1}
+.form-section{
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--brand-dark);margin:20px 0 10px;
 }
-.form-section{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--brand-dark);margin:16px 0 10px}
 .form-section:first-child{margin-top:0}
-.field{margin-bottom:11px}
-.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:11px}
-label{display:block;font-size:11px;font-weight:600;color:var(--faint);letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--faint);letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px}
 input,textarea,select{
-  width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;
+  width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:9px;
   font-family:inherit;font-size:14px;color:var(--ink);background:var(--page);
   outline:none;transition:border-color .15s;
 }
 input:focus,textarea:focus,select:focus{border-color:var(--brand);background:var(--card)}
-.odo-row{display:flex;align-items:center;gap:8px}
-.odo-arrow{color:var(--faint);font-size:16px;flex-shrink:0}
-textarea{resize:vertical;min-height:66px}
+.odo-row{display:flex;align-items:center;gap:10px}
+.odo-arrow{color:var(--faint);font-size:18px;flex-shrink:0}
+textarea{resize:vertical;min-height:80px}
+.req{color:var(--bad)}
 
 /* ── PHOTO ZONE ── */
 .photo-zone{
-  border:1.5px dashed var(--line);border-radius:11px;padding:16px 12px;
+  border:1.5px dashed var(--line);border-radius:12px;padding:28px 20px;
   text-align:center;cursor:pointer;background:var(--page);position:relative;
   transition:border-color .15s,background .15s;
 }
 .photo-zone:hover,.photo-zone.drag-over{border-color:var(--brand);background:var(--brand-soft)}
 .photo-zone>input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;padding:0;border:none;background:none}
-.pz-icon{font-size:24px;margin-bottom:4px}
-.pz-label{font-size:13px;font-weight:600;color:var(--brand);margin-bottom:2px}
-.pz-hint{font-size:11px;color:var(--faint)}
-.pz-btns{display:flex;gap:8px;margin-top:10px;pointer-events:none}
+.pz-icon{font-size:28px;margin-bottom:6px}
+.pz-label{font-size:14px;font-weight:600;color:var(--brand);margin-bottom:3px}
+.pz-hint{font-size:12px;color:var(--faint)}
+.pz-btns{display:flex;gap:10px;margin-top:12px;pointer-events:none;max-width:300px;margin-left:auto;margin-right:auto}
 .pz-btn{
-  flex:1;padding:7px;border:1px solid var(--line);border-radius:8px;
-  background:var(--card);font-family:inherit;font-size:12px;font-weight:600;color:var(--body);
-  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;
+  flex:1;padding:8px;border:1px solid var(--line);border-radius:9px;
+  background:var(--card);font-family:inherit;font-size:13px;font-weight:600;color:var(--body);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;
   pointer-events:all;transition:border-color .15s,color .15s;
 }
 .pz-btn:hover{border-color:var(--brand);color:var(--brand)}
-.photo-previews{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.photo-thumb{position:relative;width:calc(50% - 4px);border-radius:9px;overflow:hidden;background:var(--page);border:1px solid var(--line)}
-.photo-thumb img{width:100%;height:108px;object-fit:cover;display:block}
-.thumb-remove{
-  position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;
-  background:rgba(0,0,0,.55);color:#fff;border:none;cursor:pointer;font-size:11px;
-  display:grid;place-items:center;transition:background .15s;
-}
+.photo-previews{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.photo-thumb{position:relative;width:120px;border-radius:9px;overflow:hidden;background:var(--page);border:1px solid var(--line)}
+.photo-thumb img{width:100%;height:88px;object-fit:cover;display:block}
+.thumb-remove{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;border:none;cursor:pointer;font-size:11px;display:grid;place-items:center;transition:background .15s}
 .thumb-remove:hover{background:var(--bad)}
-.thumb-badge{position:absolute;bottom:5px;left:5px;background:rgba(0,0,0,.5);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px}
-.thumb-overlay{position:absolute;inset:0;display:grid;place-items:center;border-radius:9px;text-align:center}
-.thumb-overlay span{color:#fff;font-size:11px;font-weight:700;padding:0 6px}
-.overlay-upload{background:rgba(0,0,0,.42)}
+.thumb-badge{position:absolute;bottom:4px;left:4px;background:rgba(0,0,0,.5);color:#fff;font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px}
+.thumb-overlay{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.thumb-overlay span{color:#fff;font-size:11px;font-weight:700;padding:0 4px}
+.overlay-upload{background:rgba(0,0,0,.4)}
 .overlay-err{background:rgba(168,42,28,.58)}
 
-/* ── BTN ── */
-.btn{
-  width:100%;padding:13px;border:none;border-radius:11px;
-  font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;
-  transition:background .15s,transform .1s;letter-spacing:-.01em;
-}
-.btn-primary{background:var(--brand);color:#fff}
-.btn-primary:hover{background:var(--brand-dark)}
-.btn-primary:active{transform:scale(.99)}
-
-.req{color:var(--bad)}
+/* ── SECTION HEADER ── */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)}
+.section-badge{font-size:11px;font-weight:600;color:var(--body);background:var(--page);border:1px solid var(--line);padding:2px 10px;border-radius:20px}
 
 /* ── EMPTY ── */
-.empty{text-align:center;padding:48px 20px;color:var(--body)}
-.empty-icon{font-size:40px;margin-bottom:12px}
+.empty{text-align:center;padding:40px 20px;color:var(--body)}
+.empty-icon{font-size:36px;margin-bottom:10px}
 .empty h3{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:4px}
 .empty p{font-size:13px}
 
 /* ── TOAST ── */
 .toast{
-  position:fixed;bottom:70px;left:50%;
-  transform:translateX(-50%) translateY(16px);
+  position:fixed;bottom:24px;right:28px;
   background:var(--ink);color:var(--card);
-  padding:9px 18px;border-radius:22px;
-  font-size:13px;font-weight:600;z-index:100;
+  padding:10px 18px;border-radius:10px;
+  font-size:13px;font-weight:600;z-index:200;
   opacity:0;transition:opacity .25s,transform .25s;
-  white-space:nowrap;pointer-events:none;
+  transform:translateY(8px);pointer-events:none;
+  box-shadow:0 4px 20px rgba(0,0,0,.2);
 }
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* ── RESPONSIVE (mobile fallback) ── */
+@media(max-width:700px){
+  .sidebar{display:none}
+  .kpi-strip{grid-template-columns:1fr 1fr}
+  .dash-grid{grid-template-columns:1fr}
+  .dash-side{display:none}
+  .form-grid{grid-template-columns:1fr}
+  .view{padding:16px 14px 40px}
+  .topbar{padding:12px 16px}
+}
 </style>
 </head>
 <body>
-<div class="app">
+<div class="shell">
 
-  <!-- Header -->
-  <header class="masthead">
-    <div class="masthead-inner">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sb-brand">
       <img src="logo.png" alt="OD">
-      <div class="masthead-name">OD Cab Tracker<span>Fleet management</span></div>
-      <div class="masthead-right">
-        <div class="masthead-date" id="headerDate"></div>
+      <div class="sb-brand-name">OD Cab Tracker<span>Fleet management</span></div>
+    </div>
+
+    <div class="sb-section">Navigation</div>
+    <button class="nav-item active" onclick="switchTab('dashboard')"><span class="nav-icon">📊</span>Dashboard</button>
+    <button class="nav-item" onclick="switchTab('add')"><span class="nav-icon">＋</span>Add Trip</button>
+    <button class="nav-item" onclick="switchTab('history')"><span class="nav-icon">📋</span>History</button>
+
+    <div class="sb-section" style="margin-top:12px">Quick Links</div>
+    <button class="nav-item" onclick="window.open('https://docs.google.com/spreadsheets/d/1ledrEsY0KrV33HPhi1ho57fhg9-KMmLPudKOup9Mv58','_blank')">
+      <span class="nav-icon">📄</span>View Sheet
+    </button>
+    <button class="nav-item" onclick="window.open('https://drive.google.com/drive/search?q=OD+Cab+Photos','_blank')">
+      <span class="nav-icon">🖼</span>Drive Photos
+    </button>
+
+    <div class="sb-bottom" id="sbDate"></div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- Topbar -->
+    <div class="topbar" id="topbar">
+      <div>
+        <div class="topbar-title" id="topbarTitle">Dashboard</div>
+        <div class="topbar-sub" id="topbarSub">Fleet overview</div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-primary" onclick="switchTab('add')">＋ Add Trip</button>
       </div>
     </div>
-  </header>
 
-  <!-- Tabs -->
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
-    <button class="tab-btn" onclick="switchTab('add')">＋ Add Trip</button>
-    <button class="tab-btn" onclick="switchTab('history')">📋 History</button>
-  </div>
-
-  <div class="content">
-
-    <!-- DASHBOARD -->
+    <!-- Dashboard -->
     <div class="view active" id="view-dashboard">
-
-      <!-- KPI Group Card -->
-      <div class="kpi-group" id="kpiGroup">
-        <div class="kgi-head">
-          <div class="kgi-title">Fleet Summary</div>
-          <div class="kgi-badge" id="kgiBadge">0 trips</div>
+      <div class="kpi-strip" id="kpiStrip"></div>
+      <div class="dash-grid">
+        <div class="dash-main">
+          <div class="panel">
+            <div class="panel-title">KM Driven · by Month</div>
+            <div id="kmChart"><div class="empty" style="padding:20px"><p>No data yet</p></div></div>
+          </div>
+          <div class="section-header">
+            <div class="section-title">Recent Trips</div>
+            <div class="section-badge" id="recentCount">0</div>
+          </div>
+          <div class="panel" style="padding:0;overflow:hidden">
+            <div id="recentTrips"></div>
+          </div>
         </div>
-        <div class="kpi-cells" id="kpiCells"></div>
+        <div class="dash-side">
+          <div class="panel">
+            <div class="panel-title">This Month</div>
+            <div id="monthStats"></div>
+          </div>
+        </div>
       </div>
-
-      <div class="chart-card" id="chartCard" style="display:none">
-        <div class="chart-title">KM driven · by month</div>
-        <div id="kmChart"></div>
-      </div>
-
-      <div class="section-header">
-        <div class="section-title">Recent Trips</div>
-        <div class="section-badge" id="recentCount">0</div>
-      </div>
-      <div id="recentTrips"></div>
     </div>
 
-    <!-- ADD TRIP -->
+    <!-- Add Trip -->
     <div class="view" id="view-add">
-      <div class="form-card">
-        <div class="form-section">Trip Details</div>
-        <div class="field">
-          <label>Date <span class="req">*</span></label>
-          <input type="date" id="tripDate">
-        </div>
-        <div class="field-row">
-          <div class="field" style="margin-bottom:0">
-            <label>Cab / Vehicle ID</label>
-            <input type="text" id="cabId" placeholder="DL-01-AB-1234">
+      <div class="form-wrap">
+        <div class="panel">
+          <div class="form-section">Trip Details</div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Date <span class="req">*</span></label>
+              <input type="date" id="tripDate">
+            </div>
+            <div></div>
+            <div class="field">
+              <label>Cab / Vehicle ID</label>
+              <input type="text" id="cabId" placeholder="DL-01-AB-1234">
+            </div>
+            <div class="field">
+              <label>Driver Name</label>
+              <input type="text" id="driverName" placeholder="Driver name">
+            </div>
           </div>
-          <div class="field" style="margin-bottom:0">
-            <label>Driver Name</label>
-            <input type="text" id="driverName" placeholder="Name">
-          </div>
-        </div>
 
-        <div class="form-section">Odometer</div>
-        <div class="field">
-          <label>Start & End KM <span class="req">*</span></label>
-          <div class="odo-row">
-            <input type="number" id="startKm" placeholder="Start KM" min="0" style="flex:1">
-            <div class="odo-arrow">→</div>
-            <input type="number" id="endKm" placeholder="End KM" min="0" style="flex:1">
+          <div class="form-section">Odometer</div>
+          <div class="form-grid">
+            <div class="field full">
+              <label>Start & End KM <span class="req">*</span></label>
+              <div class="odo-row">
+                <input type="number" id="startKm" placeholder="Start KM" min="0">
+                <div class="odo-arrow">→</div>
+                <input type="number" id="endKm" placeholder="End KM" min="0">
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div class="form-section">Fuel</div>
-        <div class="field-row">
-          <div class="field" style="margin-bottom:0">
-            <label>Litres Added</label>
-            <input type="number" id="fuelLitres" placeholder="0.0" step="0.1" min="0">
+          <div class="form-section">Fuel</div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Litres Added</label>
+              <input type="number" id="fuelLitres" placeholder="0.0" step="0.1" min="0">
+            </div>
+            <div class="field">
+              <label>Cost (₹)</label>
+              <input type="number" id="fuelCost" placeholder="0" min="0">
+            </div>
           </div>
-          <div class="field" style="margin-bottom:0">
-            <label>Cost (₹)</label>
-            <input type="number" id="fuelCost" placeholder="0" min="0">
+
+          <div class="form-section">Route & Notes</div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Route / Location</label>
+              <input type="text" id="tripLocation" placeholder="e.g. Office → Airport">
+            </div>
+            <div class="field">
+              <label>Notes</label>
+              <input type="text" id="tripNotes" placeholder="Purpose or remarks">
+            </div>
           </div>
-        </div>
 
-        <div class="form-section">Route & Notes</div>
-        <div class="field">
-          <label>Route / Location</label>
-          <input type="text" id="tripLocation" placeholder="e.g. Office → Airport">
-        </div>
-        <div class="field">
-          <label>Notes</label>
-          <textarea id="tripNotes" placeholder="Purpose or remarks…"></textarea>
-        </div>
-
-        <div class="form-section">Photos</div>
-        <div class="field">
+          <div class="form-section">Photos</div>
           <div class="photo-zone" id="photoZone">
             <input type="file" id="tripPhoto" accept="image/*" multiple>
             <div class="pz-icon">📷</div>
-            <div class="pz-label">Tap to add photos</div>
-            <div class="pz-hint">Odometer · Fuel receipt · Any document</div>
+            <div class="pz-label">Drop photos here or click to browse</div>
+            <div class="pz-hint">Odometer · Fuel receipt · Up to 5 photos · Auto-saved to Google Drive</div>
             <div class="pz-btns">
               <label class="pz-btn">🖼 Gallery<input type="file" accept="image/*" multiple style="display:none" onchange="handlePhotoFiles(this.files)"></label>
               <label class="pz-btn">📸 Camera<input type="file" accept="image/*" capture="environment" style="display:none" onchange="handlePhotoFiles(this.files)"></label>
             </div>
           </div>
           <div class="photo-previews" id="photoPreviews"></div>
-        </div>
 
-        <button class="btn btn-primary" onclick="saveTrip()">Save Trip</button>
+          <div style="margin-top:20px;display:flex;gap:10px">
+            <button class="btn btn-primary" onclick="saveTrip()" style="flex:1;padding:12px;font-size:14px">Save Trip</button>
+            <button class="btn btn-ghost" onclick="resetForm()">Clear</button>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- HISTORY -->
+    <!-- History -->
     <div class="view" id="view-history">
-      <div class="section-header">
+      <div class="section-header" style="margin-bottom:14px">
         <div class="section-title">All Trips</div>
         <div class="section-badge" id="historyCount">0</div>
       </div>
-      <div id="allTrips"></div>
+      <div class="panel" style="padding:0;overflow:hidden">
+        <div id="allTrips"></div>
+      </div>
     </div>
 
   </div>
 </div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 const STORE    = 'fleetlog_v1';
 const ENDPOINT = 'https://script.google.com/macros/s/AKfycbwCnenzCVJ2x-9rkE_m0LgCW4ilNkM48ZyNN5ievwVcfq3MmHUMeOkKWVCRHdxqDTkI1A/exec';
 
-const svgKm   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
-const svgFuel = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22V8a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v14"/><path d="M3 10H13"/><path d="M13 8h2l2 4v4a2 2 0 0 0 4 0v-6l-2-4"/></svg>`;
-const svgEff  = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>`;
-const svgCal  = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
+const SVG = {
+  km:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+  fuel: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22V8a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v14"/><path d="M3 10H13"/><path d="M13 8h2l2 4v4a2 2 0 0 0 4 0v-6l-2-4"/></svg>`,
+  eff:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>`,
+  cal:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
+};
 
 function loadTrips(){try{return JSON.parse(localStorage.getItem(STORE))||[]}catch{return[]}}
 function saveTrips(t){try{localStorage.setItem(STORE,JSON.stringify(t))}catch{}}
 
-const now = new Date();
-document.getElementById('tripDate').value = now.toISOString().split('T')[0];
-document.getElementById('headerDate').innerHTML =
-  `<strong>${now.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'})}</strong>${now.getFullYear()}`;
+const now=new Date();
+document.getElementById('tripDate').value=now.toISOString().split('T')[0];
+document.getElementById('sbDate').innerHTML=`<div class="sb-date"><strong>${now.toLocaleDateString('en-IN',{weekday:'long'})}</strong>${now.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})}</div>`;
+
+const TAB_META={
+  dashboard:{title:'Dashboard',sub:'Fleet overview'},
+  add:{title:'Add Trip',sub:'Log a new cab trip'},
+  history:{title:'Trip History',sub:'All recorded trips'},
+};
 
 function switchTab(tab){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   document.getElementById('view-'+tab).classList.add('active');
-  ['dashboard','add','history'].forEach((t,i)=>{
-    if(t===tab) document.querySelectorAll('.tab-btn')[i].classList.add('active');
-  });
+  document.querySelectorAll('.nav-item')[['dashboard','add','history'].indexOf(tab)].classList.add('active');
+  document.getElementById('topbarTitle').textContent=TAB_META[tab].title;
+  document.getElementById('topbarSub').textContent=TAB_META[tab].sub;
   if(tab==='dashboard') renderDashboard();
   if(tab==='history')   renderHistory();
 }
 
-/* Photos */
+/* ── Photos ── */
 let pending=[];
 function compress(file,maxW=1200,q=.78){
   return new Promise(r=>{
@@ -422,7 +470,7 @@ function compress(file,maxW=1200,q=.78){
       img.onload=()=>{
         const s=Math.min(1,maxW/Math.max(img.width,img.height));
         const c=document.createElement('canvas');
-        c.width=Math.round(img.width*s); c.height=Math.round(img.height*s);
+        c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
         c.getContext('2d').drawImage(img,0,0,c.width,c.height);
         r(c.toDataURL('image/jpeg',q));
       };
@@ -434,26 +482,24 @@ function compress(file,maxW=1200,q=.78){
 async function uploadToDrive(b64,fn){
   const res=await fetch(ENDPOINT,{method:'POST',body:JSON.stringify({base64:b64,filename:fn})});
   const j=await res.json();
-  if(!j.ok) throw new Error(j.error||'Failed');
+  if(!j.ok)throw new Error(j.error||'Failed');
   return j.url;
 }
-async function saveTripToSheet(trip){
-  try{await fetch(ENDPOINT,{method:'POST',body:JSON.stringify({trip})})}catch{}
-}
+async function saveTripToSheet(trip){try{await fetch(ENDPOINT,{method:'POST',body:JSON.stringify({trip})})}catch{}}
 function renderPreviews(){
   document.getElementById('photoPreviews').innerHTML=pending.map((p,i)=>`
     <div class="photo-thumb">
       <img src="${p.local}" alt="">
       ${p.uploading?`<div class="thumb-overlay overlay-upload"><span>Uploading…</span></div>`:''}
-      ${p.error?`<div class="thumb-overlay overlay-err"><span>⚠ Failed<br><small>Remove & retry</small></span></div>`:''}
+      ${p.error?`<div class="thumb-overlay overlay-err"><span>⚠ Failed</span></div>`:''}
       ${p.url?`<div class="thumb-badge">✓ Drive</div>`:''}
       <button class="thumb-remove" onclick="removePic(${i})">✕</button>
     </div>`).join('');
 }
 function removePic(i){pending.splice(i,1);renderPreviews()}
 async function handlePhotoFiles(files){
-  if(!files||!files.length) return;
-  if(pending.length>=5){showToast('Max 5 photos');return}
+  if(!files||!files.length)return;
+  if(pending.length>=5){showToast('Max 5 photos per trip');return}
   for(const f of Array.from(files).slice(0,5-pending.length)){
     const local=await compress(f);
     const idx=pending.length;
@@ -461,10 +507,10 @@ async function handlePhotoFiles(files){
     renderPreviews();
     try{
       const url=await uploadToDrive(local,`cab_${Date.now()}.jpg`);
-      pending[idx].url=url; pending[idx].uploading=false;
-      showToast('☁️ Saved to Drive');
+      pending[idx].url=url;pending[idx].uploading=false;
+      showToast('☁️ Photo saved to Drive');
     }catch{
-      pending[idx].uploading=false; pending[idx].error=true;
+      pending[idx].uploading=false;pending[idx].error=true;
       showToast('⚠️ Upload failed');
     }
     renderPreviews();
@@ -476,7 +522,7 @@ zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag
 zone.addEventListener('dragleave',()=>zone.classList.remove('drag-over'));
 zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag-over');handlePhotoFiles(e.dataTransfer.files)});
 
-/* Save */
+/* ── Save ── */
 function saveTrip(){
   const date=document.getElementById('tripDate').value;
   const s=parseFloat(document.getElementById('startKm').value);
@@ -498,12 +544,16 @@ function saveTrip(){
   };
   const trips=loadTrips();trips.unshift(trip);saveTrips(trips);
   saveTripToSheet(trip);
+  resetForm();
+  showToast('✅ Trip saved!');
+  switchTab('dashboard');
+}
+
+function resetForm(){
   ['startKm','endKm','fuelLitres','fuelCost','tripLocation','tripNotes','cabId','driverName'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('tripDate').value=new Date().toISOString().split('T')[0];
   document.getElementById('tripPhoto').value='';
   pending=[];renderPreviews();
-  showToast('✅ Trip saved!');
-  switchTab('dashboard');
 }
 
 function deleteTrip(id){
@@ -515,87 +565,108 @@ function deleteTrip(id){
 function showToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2600);
+  setTimeout(()=>t.classList.remove('show'),2800);
 }
 
 function fmtDate(d){return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}
+function fmtDateShort(d){return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'})}
 
-function tripCardHTML(trip){
-  const eff=trip.fuelLitres>0?(trip.km/trip.fuelLitres).toFixed(1):null;
-  const imgs=(trip.photos&&trip.photos.length)?trip.photos:(trip.photo?[trip.photo]:[]);
-  const sub=[trip.cabId,trip.driverName].filter(Boolean).join(' · ');
-  return `<div class="trip-card">
-    <div class="trip-top">
-      <div>
-        <div class="trip-date">${fmtDate(trip.date)}</div>
-        <div class="trip-meta-top">
-          <div class="trip-km">${trip.km.toFixed(1)}<small> km</small></div>
-          ${eff?`<div class="chip eff">⛽ ${eff} km/L</div>`:''}
-        </div>
-        ${sub?`<div class="trip-sub">${sub}</div>`:''}
-      </div>
-      <button class="delete-btn" onclick="deleteTrip(${trip.id})">✕</button>
-    </div>
-    <div class="trip-chips">
-      <div class="chip">🛣 ${trip.startKm} → ${trip.endKm}</div>
-      ${trip.fuelCost>0?`<div class="chip fuel">₹${trip.fuelCost}${trip.fuelLitres>0?' · '+trip.fuelLitres+'L':''}</div>`:''}
-      ${trip.location?`<div class="chip loc">📍 ${trip.location}</div>`:''}
-    </div>
-    ${trip.notes?`<div class="trip-note">${trip.notes}</div>`:''}
-    ${imgs.length?`<div class="trip-photos">${imgs.map(s=>`<img src="${s}" loading="lazy">`).join('')}</div>`:''}
-  </div>`;
-}
-
+/* ── Dashboard ── */
 function renderDashboard(){
   const trips=loadTrips();
   const totalKm=trips.reduce((s,t)=>s+t.km,0);
   const totalFuel=trips.reduce((s,t)=>s+t.fuelCost,0);
   const totalL=trips.reduce((s,t)=>s+t.fuelLitres,0);
   const avgEff=totalL>0?(totalKm/totalL).toFixed(1):'—';
-  const thisM=new Date().toISOString().slice(0,7);
+  const thisM=now.toISOString().slice(0,7);
   const mKm=trips.filter(t=>t.date.startsWith(thisM)).reduce((s,t)=>s+t.km,0);
 
-  document.getElementById('kgiBadge').textContent=trips.length+' trips';
-  document.getElementById('kpiCells').innerHTML=`
-    <div class="kpi-cell"><div class="kpi-icon">${svgKm}</div><div class="kpi-fig">${totalKm.toFixed(0)}<small> km</small></div><div class="kpi-lab">Total KM</div></div>
-    <div class="kpi-cell"><div class="kpi-icon">${svgFuel}</div><div class="kpi-fig">₹${totalFuel.toLocaleString('en-IN')}</div><div class="kpi-lab">Fuel Spent</div></div>
-    <div class="kpi-cell"><div class="kpi-icon">${svgEff}</div><div class="kpi-fig">${avgEff}<small>${avgEff!=='—'?' km/L':''}</small></div><div class="kpi-lab">Efficiency</div></div>
-    <div class="kpi-cell"><div class="kpi-icon">${svgCal}</div><div class="kpi-fig">${mKm.toFixed(0)}<small> km</small></div><div class="kpi-lab">${new Date().toLocaleDateString('en-IN',{month:'short'})}</div></div>
-  `;
+  document.getElementById('kpiStrip').innerHTML=[
+    {icon:'km',  label:'Total KM',    fig:`${totalKm.toFixed(0)}<small> km</small>`,     sub:`${trips.length} trips total`},
+    {icon:'fuel',label:'Fuel Spent',  fig:`₹${totalFuel.toLocaleString('en-IN')}`,        sub:`${totalL.toFixed(1)} litres`},
+    {icon:'eff', label:'Avg Efficiency',fig:`${avgEff}<small>${avgEff!=='—'?' km/L':''}</small>`,sub:'Fleet average'},
+    {icon:'cal', label:now.toLocaleDateString('en-IN',{month:'long'}),fig:`${mKm.toFixed(0)}<small> km</small>`,sub:'This month'},
+  ].map(k=>`<div class="kpi-card">
+    <div class="kpi-top"><div class="kpi-icon-wrap">${SVG[k.icon]}</div><div class="kpi-tag">${k.label}</div></div>
+    <div class="kpi-fig">${k.fig}</div>
+    <div class="kpi-sub">${k.sub}</div>
+  </div>`).join('');
 
+  // Chart
   const byMonth={};
   trips.forEach(t=>{const m=t.date.slice(0,7);byMonth[m]=(byMonth[m]||0)+t.km});
   const months=Object.keys(byMonth).sort().slice(-6);
   if(months.length){
     const max=Math.max(...months.map(m=>byMonth[m]));
-    document.getElementById('chartCard').style.display='block';
     document.getElementById('kmChart').innerHTML=months.map(m=>{
       const pct=max>0?byMonth[m]/max*100:0;
       const label=new Date(m+'-01').toLocaleDateString('en-IN',{month:'short'}).slice(0,3);
       return `<div class="chart-row">
         <div class="chart-label">${label}</div>
         <div class="chart-bar-wrap"><div class="chart-bar" style="width:${pct}%">
-          <span class="chart-bar-val">${pct>18?byMonth[m].toFixed(0):''}</span>
+          <span class="chart-bar-val">${pct>15?byMonth[m].toFixed(0):''}</span>
         </div></div>
-        ${pct<=18?`<span style="font-size:10px;font-weight:600;color:var(--faint);min-width:28px">${byMonth[m].toFixed(0)}</span>`:''}
+        ${pct<=15?`<span style="font-size:10px;font-weight:600;color:var(--faint);min-width:32px">${byMonth[m].toFixed(0)}</span>`:''}
       </div>`;
     }).join('');
   } else {
-    document.getElementById('chartCard').style.display='none';
+    document.getElementById('kmChart').innerHTML='<div class="empty" style="padding:16px"><p>Log trips to see the chart</p></div>';
   }
 
+  // Month stats sidebar
+  const mTrips=trips.filter(t=>t.date.startsWith(thisM));
+  const mFuel=mTrips.reduce((s,t)=>s+t.fuelCost,0);
+  const mL=mTrips.reduce((s,t)=>s+t.fuelLitres,0);
+  document.getElementById('monthStats').innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:14px">
+      ${[
+        {label:'Trips',val:mTrips.length,unit:''},
+        {label:'KM Driven',val:mKm.toFixed(0),unit:' km'},
+        {label:'Fuel Cost',val:'₹'+mFuel.toLocaleString('en-IN'),unit:''},
+        {label:'Fuel Used',val:mL.toFixed(1),unit:' L'},
+        {label:'Avg/Trip',val:mTrips.length>0?(mKm/mTrips.length).toFixed(0):0,unit:' km'},
+      ].map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid var(--hair)">
+        <span style="font-size:13px;color:var(--body);font-weight:500">${r.label}</span>
+        <span style="font-size:15px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums">${r.val}<small style="font-size:12px;font-weight:400;color:var(--body)">${r.unit}</small></span>
+      </div>`).join('')}
+    </div>`.replace(/border-bottom:1px solid var\(--hair\)(?=<\/div>\s*<\/div>\s*$)/,'border-bottom:none');
+
+  // Recent trips table
   document.getElementById('recentCount').textContent=trips.length;
   document.getElementById('recentTrips').innerHTML=trips.length
-    ?trips.slice(0,5).map(tripCardHTML).join('')
-    :`<div class="empty"><div class="empty-icon">🚕</div><h3>No trips yet</h3><p>Tap "+ Add Trip" to log your first one.</p></div>`;
+    ?tripTableHTML(trips.slice(0,8))
+    :`<div class="empty"><div class="empty-icon">🚕</div><h3>No trips yet</h3><p>Click "+ Add Trip" to log your first one.</p></div>`;
 }
 
 function renderHistory(){
   const trips=loadTrips();
   document.getElementById('historyCount').textContent=trips.length;
   document.getElementById('allTrips').innerHTML=trips.length
-    ?trips.map(tripCardHTML).join('')
-    :`<div class="empty"><div class="empty-icon">📋</div><h3>No trips recorded</h3><p>Full history appears here.</p></div>`;
+    ?tripTableHTML(trips)
+    :`<div class="empty"><div class="empty-icon">📋</div><h3>No trips recorded</h3><p>All trips will appear here.</p></div>`;
+}
+
+function tripTableHTML(trips){
+  return `<table class="trip-table">
+    <thead><tr>
+      <th>Date</th><th>Cab / Driver</th><th>KM</th><th>Route</th>
+      <th>Fuel</th><th>Efficiency</th><th>Photo</th><th></th>
+    </tr></thead>
+    <tbody>${trips.map(t=>{
+      const eff=t.fuelLitres>0?(t.km/t.fuelLitres).toFixed(1):null;
+      const imgs=(t.photos&&t.photos.length)?t.photos:(t.photo?[t.photo]:[]);
+      return `<tr>
+        <td><div style="font-weight:600;font-size:13px">${fmtDateShort(t.date)}</div><div class="td-muted">${new Date(t.date+'T00:00:00').getFullYear()}</div></td>
+        <td><div style="font-weight:600;font-size:13px">${t.cabId||'—'}</div><div class="td-muted">${t.driverName||''}</div></td>
+        <td><div class="td-km">${t.km.toFixed(1)}</div><div class="td-muted">${t.startKm}→${t.endKm}</div></td>
+        <td style="max-width:160px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px">${t.location||'—'}</div><div class="td-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.notes||''}</div></td>
+        <td>${t.fuelCost>0?`<div style="font-weight:600;font-size:13px">₹${t.fuelCost}</div><div class="td-muted">${t.fuelLitres}L</div>`:'<span class="td-muted">—</span>'}</td>
+        <td>${eff?`<span class="chip eff">⛽ ${eff} km/L</span>`:'<span class="td-muted">—</span>'}</td>
+        <td class="td-photo">${imgs.length?`<img src="${imgs[0]}" loading="lazy">`:'<span class="td-muted">—</span>'}</td>
+        <td><button class="del-btn" onclick="deleteTrip(${t.id})">✕</button></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
 }
 
 renderDashboard();
