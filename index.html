@@ -367,7 +367,15 @@ textarea{resize:vertical;min-height:80px}
           <div class="form-section">Fuel</div>
           <div class="form-grid">
             <div class="field">
-              <label>Litres Added</label>
+              <label>Fuel Type</label>
+              <select id="fuelType" onchange="updateFuelLabel()">
+                <option value="Petrol">Petrol</option>
+                <option value="Diesel">Diesel</option>
+                <option value="CNG">CNG</option>
+              </select>
+            </div>
+            <div class="field">
+              <label id="fuelQtyLabel">Litres Added</label>
               <input type="number" id="fuelLitres" placeholder="0.0" step="0.1" min="0">
             </div>
             <div class="field">
@@ -536,6 +544,7 @@ function saveTrip(){
     cabId:document.getElementById('cabId').value.trim(),
     driverName:document.getElementById('driverName').value.trim(),
     startKm:s,endKm:e,km:e-s,
+    fuelType:document.getElementById('fuelType').value||'Petrol',
     fuelLitres:parseFloat(document.getElementById('fuelLitres').value)||0,
     fuelCost:parseFloat(document.getElementById('fuelCost').value)||0,
     location:document.getElementById('tripLocation').value.trim(),
@@ -549,9 +558,17 @@ function saveTrip(){
   switchTab('dashboard');
 }
 
+function updateFuelLabel(){
+  const isCNG=document.getElementById('fuelType').value==='CNG';
+  document.getElementById('fuelQtyLabel').textContent=isCNG?'KG Added':'Litres Added';
+  document.getElementById('fuelLitres').placeholder=isCNG?'0.0 kg':'0.0';
+}
+
 function resetForm(){
   ['startKm','endKm','fuelLitres','fuelCost','tripLocation','tripNotes','cabId','driverName'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('tripDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('fuelType').value='Petrol';
+  updateFuelLabel();
   document.getElementById('tripPhoto').value='';
   pending=[];renderPreviews();
 }
@@ -660,8 +677,8 @@ function tripTableHTML(trips){
         <td><div style="font-weight:600;font-size:13px">${t.cabId||'—'}</div><div class="td-muted">${t.driverName||''}</div></td>
         <td><div class="td-km">${t.km.toFixed(1)}</div><div class="td-muted">${t.startKm}→${t.endKm}</div></td>
         <td style="max-width:160px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px">${t.location||'—'}</div><div class="td-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.notes||''}</div></td>
-        <td>${t.fuelCost>0?`<div style="font-weight:600;font-size:13px">₹${t.fuelCost}</div><div class="td-muted">${t.fuelLitres}L</div>`:'<span class="td-muted">—</span>'}</td>
-        <td>${eff?`<span class="chip eff">⛽ ${eff} km/L</span>`:'<span class="td-muted">—</span>'}</td>
+        <td>${t.fuelCost>0?`<div style="font-weight:600;font-size:13px">₹${t.fuelCost}</div><div class="td-muted">${t.fuelLitres}${(t.fuelType==='CNG')?'kg':'L'}${t.fuelType?' · '+t.fuelType:''}</div>`:'<span class="td-muted">—</span>'}</td>
+        <td>${eff?`<span class="chip eff">⛽ ${eff} km/${(t.fuelType==='CNG')?'kg':'L'}</span>`:'<span class="td-muted">—</span>'}</td>
         <td class="td-photo">${imgs.length?`<img src="${imgs[0]}" loading="lazy">`:'<span class="td-muted">—</span>'}</td>
         <td><button class="del-btn" onclick="deleteTrip(${t.id})">✕</button></td>
       </tr>`;
