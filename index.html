@@ -320,6 +320,14 @@ textarea{resize:vertical;min-height:80px}
             <div class="panel-title">KM Driven · by Month</div>
             <div id="kmChart"><div class="empty" style="padding:20px"><p>No data yet</p></div></div>
           </div>
+          <div class="panel">
+            <div class="panel-title">Daily KM · Last 30 Days</div>
+            <div id="dailyKmChart"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-title">Daily Fuel Cost · Last 30 Days</div>
+            <div id="dailyFuelChart"></div>
+          </div>
           <div class="section-header">
             <div class="section-title">Recent Trips</div>
             <div class="section-badge" id="recentCount">0</div>
@@ -654,6 +662,40 @@ function renderDashboard(){
   } else {
     document.getElementById('kmChart').innerHTML='<div class="empty" style="padding:16px"><p>Log trips to see the chart</p></div>';
   }
+
+  // Daily charts — last 30 days
+  const days30=[];
+  for(let i=29;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);days30.push(d.toISOString().split('T')[0]);}
+  const byDay={};
+  trips.forEach(t=>{if(days30.includes(t.date)){byDay[t.date]=byDay[t.date]||{km:0,fuel:0};byDay[t.date].km+=t.km;byDay[t.date].fuel+=t.fuelCost;}});
+  const activeDays=days30.filter(d=>byDay[d]);
+
+  function renderDailyChart(elId, days, valFn, color, unit){
+    const el=document.getElementById(elId);
+    if(!activeDays.length){el.innerHTML='<div class="empty" style="padding:16px"><p>No data in last 30 days</p></div>';return;}
+    const vals=days.map(d=>byDay[d]?valFn(byDay[d]):0);
+    const max=Math.max(...vals)||1;
+    const barW=Math.max(6, Math.floor(560/days.length)-2);
+    const h=90;
+    const bars=days.map((d,i)=>{
+      const v=vals[i];const pct=v/max;const bh=Math.max(pct*h,v>0?3:0);
+      const x=i*(barW+2);const y=h-bh;
+      const label=d.slice(8);
+      const showLabel=(i===0||i===days.length-1||label==='01'||v===max);
+      return `<g>
+        <rect x="${x}" y="${y}" width="${barW}" height="${bh}" rx="2" fill="${v>0?color:'var(--hair)'}">
+          <title>${d}: ${unit==='₹'?'₹':'' }${v.toFixed(unit==='₹'?0:1)}${unit!=='₹'?' '+unit:''}</title>
+        </rect>
+        ${showLabel?`<text x="${x+barW/2}" y="${h+13}" text-anchor="middle" font-size="9" fill="var(--body)">${label}</text>`:''}
+        ${v>0&&pct>0.15?`<text x="${x+barW/2}" y="${y-3}" text-anchor="middle" font-size="8" font-weight="600" fill="${color}">${unit==='₹'?Math.round(v):v.toFixed(0)}</text>`:''}
+      </g>`;
+    }).join('');
+    const svgW=(barW+2)*days.length;
+    el.innerHTML=`<div style="overflow-x:auto;padding:4px 0 0"><svg viewBox="0 0 ${svgW} ${h+20}" width="100%" height="${h+20}" style="min-width:${Math.min(svgW,300)}px;max-width:100%;display:block">${bars}</svg></div>`;
+  }
+
+  renderDailyChart('dailyKmChart', days30, d=>d.km, 'var(--brand)', 'km');
+  renderDailyChart('dailyFuelChart', days30, d=>d.fuel, 'var(--deep)', '₹');
 
   // Month stats sidebar
   const mTrips=trips.filter(t=>t.date.startsWith(thisM));
