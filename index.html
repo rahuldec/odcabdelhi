@@ -316,6 +316,13 @@ textarea{resize:vertical;min-height:80px}
       <div class="kpi-strip" id="kpiStrip"></div>
       <div class="dash-grid">
         <div class="dash-main">
+          <div class="section-header">
+            <div class="section-title">Recent Trips</div>
+            <div class="section-badge" id="recentCount">0</div>
+          </div>
+          <div class="panel" style="padding:0;overflow:hidden">
+            <div id="recentTrips"></div>
+          </div>
           <div class="panel">
             <div class="panel-title">KM Driven · by Month</div>
             <div id="kmChart"><div class="empty" style="padding:20px"><p>No data yet</p></div></div>
@@ -327,13 +334,6 @@ textarea{resize:vertical;min-height:80px}
           <div class="panel">
             <div class="panel-title">Daily Fuel Cost · Last 30 Days</div>
             <div id="dailyFuelChart"></div>
-          </div>
-          <div class="section-header">
-            <div class="section-title">Recent Trips</div>
-            <div class="section-badge" id="recentCount">0</div>
-          </div>
-          <div class="panel" style="padding:0;overflow:hidden">
-            <div id="recentTrips"></div>
           </div>
         </div>
         <div class="dash-side">
