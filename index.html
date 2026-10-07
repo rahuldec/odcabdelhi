@@ -178,6 +178,12 @@ html,body{
 .photo-popup img{width:320px;height:240px;object-fit:cover;display:block}
 .del-btn{background:none;border:none;color:var(--faint);cursor:pointer;font-size:14px;padding:3px 6px;border-radius:5px;transition:color .15s,background .15s}
 .del-btn:hover{color:var(--bad);background:var(--bad-soft)}
+.spark-path{stroke-dasharray:2000;stroke-dashoffset:2000;animation:drawLine 1.2s cubic-bezier(.4,0,.2,1) forwards}
+@keyframes drawLine{to{stroke-dashoffset:0}}
+.spark-dot{opacity:0;animation:popDot .25s ease forwards}
+@keyframes popDot{to{opacity:1}}
+.spark-tip{position:absolute;background:var(--ink);color:#fff;font-size:11px;font-weight:600;padding:5px 9px;border-radius:8px;pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .15s;transform:translate(-50%,-100%);margin-top:-8px;z-index:10}
+.spark-tip::after{content:'';position:absolute;left:50%;bottom:-4px;transform:translateX(-50%);border:4px solid transparent;border-top-color:var(--ink);border-bottom:none}
 
 .chip{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px;background:var(--page);border:1px solid var(--line);color:var(--body)}
 .chip.fuel{background:var(--warn-soft);color:var(--warn);border-color:transparent}
@@ -426,7 +432,11 @@ textarea{resize:vertical;min-height:80px}
 
     <!-- History -->
     <div class="view" id="view-history">
-      <div class="section-header" style="margin-bottom:14px">
+      <div class="panel" style="padding:20px 24px 24px;margin-bottom:0;border-bottom-left-radius:0;border-bottom-right-radius:0">
+        <div class="panel-title" style="margin-bottom:16px">KM per Trip</div>
+        <div id="tripSparkWrap" style="position:relative"></div>
+      </div>
+      <div class="section-header" style="margin-top:20px;margin-bottom:14px">
         <div class="section-title">All Trips</div>
         <div class="section-badge" id="historyCount">0</div>
       </div>
@@ -717,9 +727,76 @@ function renderDashboard(){
     :`<div class="empty"><div class="empty-icon">🚕</div><h3>No trips yet</h3><p>Click "+ Add Trip" to log your first one.</p></div>`;
 }
 
+function renderTripSpark(trips){
+  const wrap=document.getElementById('tripSparkWrap');
+  if(!trips.length){wrap.innerHTML='<div class="empty" style="padding:16px"><p>No trips yet</p></div>';return;}
+  const sorted=[...trips].sort((a,b)=>a.date.localeCompare(b.date));
+  const W=wrap.clientWidth||700, H=120, pad={t:10,r:16,b:32,l:40};
+  const cw=W-pad.l-pad.r, ch=H-pad.t-pad.b;
+  const maxKm=Math.max(...sorted.map(t=>t.km),1);
+  const pts=sorted.map((t,i)=>{
+    const x=pad.l+(sorted.length===1?cw/2:i/(sorted.length-1)*cw);
+    const y=pad.t+(1-t.km/maxKm)*ch;
+    return{x,y,t};
+  });
+  // smooth bezier path
+  function cp(a,b,t=0.35){return{x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t};}
+  let d=`M${pts[0].x},${pts[0].y}`;
+  for(let i=1;i<pts.length;i++){
+    const c1=cp(pts[i-1],pts[i]);
+    const c2=cp(pts[i],pts[i-1]);
+    d+=` C${c1.x},${c1.y} ${c2.x},${c2.y} ${pts[i].x},${pts[i].y}`;
+  }
+  const areaD=d+` L${pts[pts.length-1].x},${pad.t+ch} L${pts[0].x},${pad.t+ch} Z`;
+  // y-axis labels
+  const yTicks=[0,0.5,1].map(f=>{
+    const val=Math.round(maxKm*f);
+    const y=pad.t+(1-f)*ch;
+    return `<text x="${pad.l-6}" y="${y+4}" text-anchor="end" font-size="10" fill="var(--body)">${val}</text>
+    <line x1="${pad.l}" y1="${y}" x2="${pad.l+cw}" y2="${y}" stroke="var(--hair)" stroke-width="1"/>`;
+  }).join('');
+  // x-axis date labels
+  const step=Math.max(1,Math.floor(pts.length/6));
+  const xLabels=pts.filter((_,i)=>i%step===0||i===pts.length-1).map(p=>{
+    const d=new Date(p.t.date+'T00:00:00');
+    const lbl=d.toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+    return `<text x="${p.x}" y="${H-4}" text-anchor="middle" font-size="10" fill="var(--body)">${lbl}</text>`;
+  }).join('');
+  // dots
+  const dots=pts.map((p,i)=>`<circle class="spark-dot" cx="${p.x}" cy="${p.y}" r="5" fill="var(--brand)" stroke="#fff" stroke-width="2" style="animation-delay:${0.8+i*0.04}s;cursor:pointer"
+    onmouseenter="showSparkTip(this,event,'${p.t.date}',${p.t.km})"
+    onmouseleave="hideSparkTip()"/>`).join('');
+  wrap.innerHTML=`<div id="sparkTip" class="spark-tip"></div>
+  <svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="overflow:visible">
+    <defs>
+      <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="var(--brand)" stop-opacity="0.25"/>
+        <stop offset="100%" stop-color="var(--brand)" stop-opacity="0.02"/>
+      </linearGradient>
+    </defs>
+    ${yTicks}${xLabels}
+    <path d="${areaD}" fill="url(#sparkGrad)"/>
+    <path class="spark-path" d="${d}" fill="none" stroke="var(--brand)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="stroke-dasharray:3000;stroke-dashoffset:3000"/>
+    ${dots}
+  </svg>`;
+}
+
+function showSparkTip(el,e,date,km){
+  const tip=document.getElementById('sparkTip');
+  const wrap=document.getElementById('tripSparkWrap');
+  const wr=wrap.getBoundingClientRect(),er=el.getBoundingClientRect();
+  const d=new Date(date+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+  tip.innerHTML=`${d}<br><span style="color:var(--brand);font-size:13px">${km.toFixed(1)} km</span>`;
+  tip.style.left=(er.left-wr.left+er.width/2)+'px';
+  tip.style.top=(er.top-wr.top)+'px';
+  tip.style.opacity='1';
+}
+function hideSparkTip(){const t=document.getElementById('sparkTip');if(t)t.style.opacity='0';}
+
 function renderHistory(){
   const trips=loadTrips();
   document.getElementById('historyCount').textContent=trips.length;
+  renderTripSpark(trips);
   document.getElementById('allTrips').innerHTML=trips.length
     ?tripTableHTML(trips)
     :`<div class="empty"><div class="empty-icon">📋</div><h3>No trips recorded</h3><p>All trips will appear here.</p></div>`;
