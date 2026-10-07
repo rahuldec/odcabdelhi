@@ -432,7 +432,11 @@ textarea{resize:vertical;min-height:80px}
 
     <!-- History -->
     <div class="view" id="view-history">
-      <div class="section-header" style="margin-bottom:14px">
+      <div class="panel" style="padding:20px 24px 24px;margin-bottom:0;border-bottom-left-radius:0;border-bottom-right-radius:0">
+        <div class="panel-title" style="margin-bottom:16px">KM per Trip</div>
+        <div id="tripSparkWrap" style="position:relative"></div>
+      </div>
+      <div class="section-header" style="margin-top:20px;margin-bottom:14px">
         <div class="section-title">All Trips</div>
         <div class="section-badge" id="historyCount">0</div>
       </div>
@@ -794,11 +798,11 @@ function renderHistory(){
   document.getElementById('historyCount').textContent=trips.length;
   renderTripSpark(trips);
   document.getElementById('allTrips').innerHTML=trips.length
-    ?tripTableHTML(trips)
+    ?tripTableHTML(trips,false)
     :`<div class="empty"><div class="empty-icon">📋</div><h3>No trips recorded</h3><p>All trips will appear here.</p></div>`;
 }
 
-function tripTableHTML(trips){
+function tripTableHTML(trips,showDel=true){
   return `<table class="trip-table">
     <thead><tr>
       <th>Date</th><th>Cab / Driver</th><th>KM</th><th>Route</th>
@@ -815,7 +819,7 @@ function tripTableHTML(trips){
         <td>${t.fuelCost>0?`<div style="font-weight:600;font-size:13px">₹${t.fuelCost}</div><div class="td-muted">${t.fuelLitres}${(t.fuelType==='CNG')?'kg':'L'}${t.fuelType?' · '+t.fuelType:''}</div>`:'<span class="td-muted">—</span>'}</td>
         <td>${eff?`<span class="chip eff">⛽ ${eff} km/${(t.fuelType==='CNG')?'kg':'L'}</span>`:'<span class="td-muted">—</span>'}</td>
         <td class="td-photo">${imgs.length?`<a href="${imgs[0]}" target="_blank" onmouseenter="showPhotoPopup(event,'${driveFullUrl(imgs[0])}')" onmousemove="movePhotoPopup(event)" onmouseleave="hidePhotoPopup()"><img src="${driveThumb(imgs[0])}" loading="lazy"></a>`:'<span class="td-muted">—</span>'}</td>
-        <td><button class="del-btn" onclick="deleteTrip(${t.id})">✕</button></td>
+        ${showDel?`<td><button class="del-btn" onclick="deleteTrip(${t.id})">✕</button></td>`:'<td></td>'}
       </tr>`;
     }).join('')}</tbody>
   </table>`;
