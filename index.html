@@ -301,6 +301,7 @@ textarea{resize:vertical;min-height:80px}
         <div class="topbar-sub" id="topbarSub">Fleet overview</div>
       </div>
       <div class="topbar-right">
+        <span id="syncBadge" style="font-size:12px;font-weight:600;color:var(--body);display:none"></span>
         <button class="btn btn-primary" onclick="switchTab('add')">＋ Add Trip</button>
       </div>
     </div>
@@ -686,7 +687,34 @@ function tripTableHTML(trips){
   </table>`;
 }
 
+/* ── Sheet sync ── */
+function setSyncBadge(msg,color){
+  const b=document.getElementById('syncBadge');
+  b.textContent=msg;b.style.color=color||'var(--body)';b.style.display=msg?'':'none';
+}
+
+async function syncFromSheet(){
+  setSyncBadge('⟳ Syncing…','var(--body)');
+  try{
+    const res=await fetch(ENDPOINT+'?action=trips',{redirect:'follow'});
+    const data=await res.json();
+    if(data.trips&&Array.isArray(data.trips)){
+      saveTrips(data.trips);
+      renderDashboard();
+      renderHistory();
+      setSyncBadge('✓ Synced','#34C759');
+      setTimeout(()=>setSyncBadge(''),2500);
+    } else {
+      setSyncBadge('⚠ Sync error','#FF9500');
+    }
+  }catch(err){
+    setSyncBadge('⚠ Offline — using local cache','#FF9500');
+    setTimeout(()=>setSyncBadge(''),3000);
+  }
+}
+
 renderDashboard();
+syncFromSheet();
 </script>
 </body>
 </html>
