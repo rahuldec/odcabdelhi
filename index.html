@@ -362,7 +362,7 @@ textarea{resize:vertical;min-height:80px}
             </div>
             <div class="field">
               <label>Driver Name</label>
-              <input type="text" id="driverName" placeholder="Driver name">
+              <input type="text" id="driverName" value="Ashish Kumar" placeholder="Driver name">
             </div>
           </div>
 
@@ -580,7 +580,8 @@ function updateFuelLabel(){
 }
 
 function resetForm(){
-  ['startKm','endKm','fuelLitres','fuelCost','tripLocation','tripNotes','driverName'].forEach(id=>document.getElementById(id).value='');
+  ['startKm','endKm','fuelLitres','fuelCost','tripLocation','tripNotes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('driverName').value='Ashish Kumar';
   document.getElementById('tripDate').value=new Date().toISOString().split('T')[0];
   document.getElementById('fuelType').value='Petrol';
   updateFuelLabel();
