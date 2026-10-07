@@ -597,6 +597,7 @@ function showToast(msg){
 function fmtDate(d){return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}
 function fmtDateShort(d){return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'})}
 function driveThumb(url,sz='w120'){const m=url.match(/[?&]id=([^&]+)/);return m?'https://drive.google.com/thumbnail?id='+m[1]+'&sz='+sz:url}
+function driveFullUrl(url){const m=url.match(/[?&]id=([^&]+)/);return m?'https://lh3.googleusercontent.com/d/'+m[1]:url}
 
 function showPhotoPopup(e,src){
   const p=document.getElementById('photoPopup');
@@ -740,7 +741,7 @@ function tripTableHTML(trips){
         <td style="max-width:160px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px">${t.location||'—'}</div><div class="td-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.notes||''}</div></td>
         <td>${t.fuelCost>0?`<div style="font-weight:600;font-size:13px">₹${t.fuelCost}</div><div class="td-muted">${t.fuelLitres}${(t.fuelType==='CNG')?'kg':'L'}${t.fuelType?' · '+t.fuelType:''}</div>`:'<span class="td-muted">—</span>'}</td>
         <td>${eff?`<span class="chip eff">⛽ ${eff} km/${(t.fuelType==='CNG')?'kg':'L'}</span>`:'<span class="td-muted">—</span>'}</td>
-        <td class="td-photo">${imgs.length?`<a href="${imgs[0]}" target="_blank" onmouseenter="showPhotoPopup(event,'${driveThumb(imgs[0],'w800')}')" onmousemove="movePhotoPopup(event)" onmouseleave="hidePhotoPopup()"><img src="${driveThumb(imgs[0])}" loading="lazy"></a>`:'<span class="td-muted">—</span>'}</td>
+        <td class="td-photo">${imgs.length?`<a href="${imgs[0]}" target="_blank" onmouseenter="showPhotoPopup(event,'${driveFullUrl(imgs[0])}')" onmousemove="movePhotoPopup(event)" onmouseleave="hidePhotoPopup()"><img src="${driveThumb(imgs[0])}" loading="lazy"></a>`:'<span class="td-muted">—</span>'}</td>
         <td><button class="del-btn" onclick="deleteTrip(${t.id})">✕</button></td>
       </tr>`;
     }).join('')}</tbody>
