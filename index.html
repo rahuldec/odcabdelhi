@@ -175,7 +175,7 @@ html,body{
 .td-photo a:hover img{opacity:.85}
 .td-photo a::after{content:'';display:none}
 .photo-popup{display:none;position:fixed;z-index:9999;pointer-events:none;border-radius:12px;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.35);border:2px solid #fff}
-.photo-popup img{width:280px;height:210px;object-fit:cover;display:block}
+.photo-popup img{width:320px;height:240px;object-fit:cover;display:block}
 .del-btn{background:none;border:none;color:var(--faint);cursor:pointer;font-size:14px;padding:3px 6px;border-radius:5px;transition:color .15s,background .15s}
 .del-btn:hover{color:var(--bad);background:var(--bad-soft)}
 
@@ -596,7 +596,7 @@ function showToast(msg){
 
 function fmtDate(d){return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}
 function fmtDateShort(d){return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'})}
-function driveThumb(url){const m=url.match(/[?&]id=([^&]+)/);return m?'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w120':url}
+function driveThumb(url,sz='w120'){const m=url.match(/[?&]id=([^&]+)/);return m?'https://drive.google.com/thumbnail?id='+m[1]+'&sz='+sz:url}
 
 function showPhotoPopup(e,src){
   const p=document.getElementById('photoPopup');
@@ -606,7 +606,7 @@ function showPhotoPopup(e,src){
 }
 function movePhotoPopup(e){
   const p=document.getElementById('photoPopup');
-  const pad=16,pw=284,ph=214;
+  const pad=16,pw=324,ph=244;
   let x=e.clientX+pad, y=e.clientY-ph/2;
   if(x+pw>window.innerWidth) x=e.clientX-pw-pad;
   if(y<8) y=8;
@@ -740,7 +740,7 @@ function tripTableHTML(trips){
         <td style="max-width:160px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px">${t.location||'—'}</div><div class="td-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.notes||''}</div></td>
         <td>${t.fuelCost>0?`<div style="font-weight:600;font-size:13px">₹${t.fuelCost}</div><div class="td-muted">${t.fuelLitres}${(t.fuelType==='CNG')?'kg':'L'}${t.fuelType?' · '+t.fuelType:''}</div>`:'<span class="td-muted">—</span>'}</td>
         <td>${eff?`<span class="chip eff">⛽ ${eff} km/${(t.fuelType==='CNG')?'kg':'L'}</span>`:'<span class="td-muted">—</span>'}</td>
-        <td class="td-photo">${imgs.length?`<a href="${imgs[0]}" target="_blank" onmouseenter="showPhotoPopup(event,'${driveThumb(imgs[0])}')" onmousemove="movePhotoPopup(event)" onmouseleave="hidePhotoPopup()"><img src="${driveThumb(imgs[0])}" loading="lazy"></a>`:'<span class="td-muted">—</span>'}</td>
+        <td class="td-photo">${imgs.length?`<a href="${imgs[0]}" target="_blank" onmouseenter="showPhotoPopup(event,'${driveThumb(imgs[0],'w800')}')" onmousemove="movePhotoPopup(event)" onmouseleave="hidePhotoPopup()"><img src="${driveThumb(imgs[0])}" loading="lazy"></a>`:'<span class="td-muted">—</span>'}</td>
         <td><button class="del-btn" onclick="deleteTrip(${t.id})">✕</button></td>
       </tr>`;
     }).join('')}</tbody>
