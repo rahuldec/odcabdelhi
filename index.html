@@ -170,7 +170,12 @@ html,body{
 .trip-table tbody tr:hover{background:var(--brand-soft);cursor:default}
 .td-km{font-size:15px;font-weight:700;color:var(--brand);font-variant-numeric:tabular-nums}
 .td-muted{color:var(--body);font-size:12px}
-.td-photo img{width:44px;height:34px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
+.td-photo{position:relative}
+.td-photo img{width:44px;height:34px;object-fit:cover;border-radius:6px;border:1px solid var(--line);cursor:zoom-in;transition:opacity .15s}
+.td-photo a:hover img{opacity:.85}
+.td-photo a::after{content:'';display:none}
+.photo-popup{display:none;position:fixed;z-index:9999;pointer-events:none;border-radius:12px;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.35);border:2px solid #fff}
+.photo-popup img{width:280px;height:210px;object-fit:cover;display:block}
 .del-btn{background:none;border:none;color:var(--faint);cursor:pointer;font-size:14px;padding:3px 6px;border-radius:5px;transition:color .15s,background .15s}
 .del-btn:hover{color:var(--bad);background:var(--bad-soft)}
 
@@ -433,6 +438,7 @@ textarea{resize:vertical;min-height:80px}
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="photo-popup" id="photoPopup"><img id="photoPopupImg" src=""></div>
 
 <script>
 const STORE    = 'fleetlog_v1';
@@ -590,6 +596,23 @@ function fmtDate(d){return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{d
 function fmtDateShort(d){return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'})}
 function driveThumb(url){const m=url.match(/[?&]id=([^&]+)/);return m?'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w120':url}
 
+function showPhotoPopup(e,src){
+  const p=document.getElementById('photoPopup');
+  document.getElementById('photoPopupImg').src=src;
+  p.style.display='block';
+  movePhotoPopup(e);
+}
+function movePhotoPopup(e){
+  const p=document.getElementById('photoPopup');
+  const pad=16,pw=284,ph=214;
+  let x=e.clientX+pad, y=e.clientY-ph/2;
+  if(x+pw>window.innerWidth) x=e.clientX-pw-pad;
+  if(y<8) y=8;
+  if(y+ph>window.innerHeight-8) y=window.innerHeight-ph-8;
+  p.style.left=x+'px'; p.style.top=y+'px';
+}
+function hidePhotoPopup(){document.getElementById('photoPopup').style.display='none';}
+
 /* ── Dashboard ── */
 function renderDashboard(){
   const trips=loadTrips();
@@ -681,7 +704,7 @@ function tripTableHTML(trips){
         <td style="max-width:160px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px">${t.location||'—'}</div><div class="td-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.notes||''}</div></td>
         <td>${t.fuelCost>0?`<div style="font-weight:600;font-size:13px">₹${t.fuelCost}</div><div class="td-muted">${t.fuelLitres}${(t.fuelType==='CNG')?'kg':'L'}${t.fuelType?' · '+t.fuelType:''}</div>`:'<span class="td-muted">—</span>'}</td>
         <td>${eff?`<span class="chip eff">⛽ ${eff} km/${(t.fuelType==='CNG')?'kg':'L'}</span>`:'<span class="td-muted">—</span>'}</td>
-        <td class="td-photo">${imgs.length?`<a href="${imgs[0]}" target="_blank"><img src="${driveThumb(imgs[0])}" loading="lazy"></a>`:'<span class="td-muted">—</span>'}</td>
+        <td class="td-photo">${imgs.length?`<a href="${imgs[0]}" target="_blank" onmouseenter="showPhotoPopup(event,'${driveThumb(imgs[0])}')" onmousemove="movePhotoPopup(event)" onmouseleave="hidePhotoPopup()"><img src="${driveThumb(imgs[0])}" loading="lazy"></a>`:'<span class="td-muted">—</span>'}</td>
         <td><button class="del-btn" onclick="deleteTrip(${t.id})">✕</button></td>
       </tr>`;
     }).join('')}</tbody>
