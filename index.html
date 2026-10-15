@@ -189,6 +189,28 @@ html,body{
 .chip.fuel{background:var(--warn-soft);color:var(--warn);border-color:transparent}
 .chip.loc{background:var(--ok-soft);color:var(--ok);border-color:transparent}
 .chip.eff{background:var(--brand-soft);color:var(--brand-dark);border-color:transparent}
+.chip.company{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.chip.personal{background:var(--brand-soft);color:var(--brand-dark);border-color:transparent}
+
+/* ── USAGE TOGGLE ── */
+.usage-toggle{display:flex;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--page)}
+.usage-btn{flex:1;padding:9px 14px;border:none;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;color:var(--body);background:transparent;transition:background .15s,color .15s;letter-spacing:-.01em}
+.usage-btn.active[data-val="company"]{background:var(--ok);color:#fff}
+.usage-btn.active[data-val="personal"]{background:var(--brand);color:#fff}
+.usage-btn:not(.active):hover{background:var(--hair)}
+
+/* ── USAGE SPLIT BAR ── */
+.split-bar-wrap{height:12px;border-radius:6px;overflow:hidden;background:var(--page);margin:10px 0 14px;display:flex}
+.split-bar-company{background:var(--ok);height:100%;transition:width .5s ease}
+.split-bar-personal{background:var(--brand);height:100%;transition:width .5s ease}
+.split-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.split-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;flex-shrink:0}
+
+/* ── HISTORY FILTER TABS ── */
+.filter-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.filter-tab{padding:7px 16px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;color:var(--body);background:var(--page);transition:background .15s,color .15s,border-color .15s}
+.filter-tab.active{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.filter-tab:hover:not(.active){background:var(--hair)}
 
 /* ── FORM ── */
 .form-wrap{max-width:760px}
@@ -313,6 +335,7 @@ textarea{resize:vertical;min-height:80px}
     <!-- Dashboard -->
     <div class="view active" id="view-dashboard">
       <div class="kpi-strip" id="kpiStrip"></div>
+      <div id="usageSplitPanel"></div>
       <div class="dash-grid">
         <div class="dash-main">
           <div class="section-header">
@@ -354,7 +377,13 @@ textarea{resize:vertical;min-height:80px}
               <label>Date <span class="req">*</span></label>
               <input type="date" id="tripDate">
             </div>
-            <div></div>
+            <div class="field">
+              <label>Usage Type <span class="req">*</span></label>
+              <div class="usage-toggle">
+                <button type="button" class="usage-btn active" data-val="company" onclick="setUsageType('company')">🏢 Company</button>
+                <button type="button" class="usage-btn" data-val="personal" onclick="setUsageType('personal')">🏠 Personal</button>
+              </div>
+            </div>
             <div class="field">
               <label>Cab / Vehicle ID</label>
               <input type="text" id="cabId" value="DL4CBG4855" readonly style="background:var(--page);color:var(--body);cursor:not-allowed">
@@ -436,10 +465,11 @@ textarea{resize:vertical;min-height:80px}
         <div class="panel-title" style="margin-bottom:16px">KM per Trip</div>
         <div id="tripSparkWrap" style="position:relative"></div>
       </div>
-      <div class="section-header" style="margin-top:20px;margin-bottom:14px">
+      <div class="section-header" style="margin-top:20px;margin-bottom:10px">
         <div class="section-title">All Trips</div>
         <div class="section-badge" id="historyCount">0</div>
       </div>
+      <div class="filter-tabs" id="historyFilters"></div>
       <div class="panel" style="padding:0;overflow:hidden">
         <div id="allTrips"></div>
       </div>
@@ -454,6 +484,28 @@ textarea{resize:vertical;min-height:80px}
 <script>
 const STORE    = 'fleetlog_v1';
 const ENDPOINT = 'https://script.google.com/macros/s/AKfycbwCnenzCVJ2x-9rkE_m0LgCW4ilNkM48ZyNN5ievwVcfq3MmHUMeOkKWVCRHdxqDTkI1A/exec';
+
+let currentUsageType = 'company';
+let historyFilter = 'all';
+
+function setUsageType(val){
+  currentUsageType = val;
+  document.querySelectorAll('.usage-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.val === val);
+  });
+}
+
+function setHistoryFilter(f){
+  historyFilter = f;
+  document.querySelectorAll('.filter-tab').forEach(b=>{
+    b.classList.toggle('active', b.dataset.filter === f);
+  });
+  const trips = loadTrips();
+  const filtered = f === 'all' ? trips : trips.filter(t=>(t.usageType||'company') === f);
+  document.getElementById('allTrips').innerHTML = filtered.length
+    ? tripTableHTML(filtered, false)
+    : `<div class="empty"><div class="empty-icon">📋</div><h3>No ${f} trips</h3><p>No trips match this filter.</p></div>`;
+}
 
 const SVG = {
   km:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
@@ -559,6 +611,7 @@ function saveTrip(){
   if(pending.some(p=>p.uploading)){showToast('⏳ Photos still uploading…');return}
   const trip={
     id:Date.now(),date,
+    usageType:currentUsageType,
     cabId:document.getElementById('cabId').value.trim(),
     driverName:document.getElementById('driverName').value.trim(),
     startKm:s,endKm:e,km:e-s,
@@ -588,6 +641,7 @@ function resetForm(){
   document.getElementById('tripDate').value=new Date().toISOString().split('T')[0];
   document.getElementById('fuelType').value='Petrol';
   updateFuelLabel();
+  setUsageType('company');
   document.getElementById('tripPhoto').value='';
   pending=[];renderPreviews();
 }
@@ -646,6 +700,41 @@ function renderDashboard(){
     <div class="kpi-fig">${k.fig}</div>
     <div class="kpi-sub">${k.sub}</div>
   </div>`).join('');
+
+  // Usage split panel
+  const coTrips=trips.filter(t=>(t.usageType||'company')==='company');
+  const peTrips=trips.filter(t=>t.usageType==='personal');
+  const coKm=coTrips.reduce((s,t)=>s+t.km,0);
+  const peKm=peTrips.reduce((s,t)=>s+t.km,0);
+  const totalAllKm=coKm+peKm;
+  const coPct=totalAllKm>0?Math.round(coKm/totalAllKm*100):0;
+  const pePct=totalAllKm>0?100-coPct:0;
+  const coFuel=coTrips.reduce((s,t)=>s+t.fuelCost,0);
+  const peFuel=peTrips.reduce((s,t)=>s+t.fuelCost,0);
+  const sp=document.getElementById('usageSplitPanel');
+  if(trips.length){
+    sp.innerHTML=`<div class="panel" style="margin-bottom:18px">
+      <div class="panel-title">Usage Split · All Time</div>
+      <div class="split-bar-wrap">
+        <div class="split-bar-company" style="width:${coPct}%"></div>
+        <div class="split-bar-personal" style="width:${pePct}%"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div style="padding:14px;background:var(--ok-soft);border-radius:12px">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ok);margin-bottom:8px"><span class="split-dot" style="background:var(--ok)"></span>🏢 Company · ${coPct}%</div>
+          <div style="font-size:22px;font-weight:700;color:var(--ink)">${coKm.toFixed(0)} <small style="font-size:13px;font-weight:400;color:var(--body)">km</small></div>
+          <div style="font-size:12px;color:var(--body);margin-top:4px">${coTrips.length} trips · ₹${coFuel.toLocaleString('en-IN')}</div>
+        </div>
+        <div style="padding:14px;background:var(--brand-soft);border-radius:12px">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--brand-dark);margin-bottom:8px"><span class="split-dot" style="background:var(--brand)"></span>🏠 Personal · ${pePct}%</div>
+          <div style="font-size:22px;font-weight:700;color:var(--ink)">${peKm.toFixed(0)} <small style="font-size:13px;font-weight:400;color:var(--body)">km</small></div>
+          <div style="font-size:12px;color:var(--body);margin-top:4px">${peTrips.length} trips · ₹${peFuel.toLocaleString('en-IN')}</div>
+        </div>
+      </div>
+    </div>`;
+  } else {
+    sp.innerHTML='';
+  }
 
   // Chart
   const byMonth={};
@@ -706,19 +795,35 @@ function renderDashboard(){
   const mTrips=trips.filter(t=>t.date.startsWith(thisM));
   const mFuel=mTrips.reduce((s,t)=>s+t.fuelCost,0);
   const mL=mTrips.reduce((s,t)=>s+t.fuelLitres,0);
+  const mCoTrips=mTrips.filter(t=>(t.usageType||'company')==='company');
+  const mPeTrips=mTrips.filter(t=>t.usageType==='personal');
+  const mCoKm=mCoTrips.reduce((s,t)=>s+t.km,0);
+  const mPeKm=mPeTrips.reduce((s,t)=>s+t.km,0);
+  const rows=[
+    {label:'Trips',val:mTrips.length,unit:''},
+    {label:'KM Driven',val:mKm.toFixed(0),unit:' km'},
+    {label:'Fuel Cost',val:'₹'+mFuel.toLocaleString('en-IN'),unit:''},
+    {label:'Fuel Used',val:mL.toFixed(1),unit:' L'},
+    {label:'Avg/Trip',val:mTrips.length>0?(mKm/mTrips.length).toFixed(0):0,unit:' km'},
+  ];
+  const splitRows=mTrips.length?[
+    {label:'🏢 Company',val:mCoKm.toFixed(0),unit:' km',sub:mCoTrips.length+' trips',ok:true},
+    {label:'🏠 Personal',val:mPeKm.toFixed(0),unit:' km',sub:mPeTrips.length+' trips',brand:true},
+  ]:[];
   document.getElementById('monthStats').innerHTML=`
-    <div style="display:flex;flex-direction:column;gap:14px">
-      ${[
-        {label:'Trips',val:mTrips.length,unit:''},
-        {label:'KM Driven',val:mKm.toFixed(0),unit:' km'},
-        {label:'Fuel Cost',val:'₹'+mFuel.toLocaleString('en-IN'),unit:''},
-        {label:'Fuel Used',val:mL.toFixed(1),unit:' L'},
-        {label:'Avg/Trip',val:mTrips.length>0?(mKm/mTrips.length).toFixed(0):0,unit:' km'},
-      ].map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid var(--hair)">
+    <div style="display:flex;flex-direction:column;gap:0">
+      ${rows.map((r,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--hair)">
         <span style="font-size:13px;color:var(--body);font-weight:500">${r.label}</span>
         <span style="font-size:15px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums">${r.val}<small style="font-size:12px;font-weight:400;color:var(--body)">${r.unit}</small></span>
       </div>`).join('')}
-    </div>`.replace(/border-bottom:1px solid var\(--hair\)(?=<\/div>\s*<\/div>\s*$)/,'border-bottom:none');
+      ${splitRows.length?`<div style="padding-top:14px">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin-bottom:10px">Usage Split</div>
+        ${splitRows.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:12px;color:var(--body);font-weight:500">${r.label} <span style="font-size:11px;color:var(--faint)">${r.sub}</span></span>
+          <span style="font-size:14px;font-weight:700;color:${r.ok?'var(--ok)':'var(--brand)'};font-variant-numeric:tabular-nums">${r.val}<small style="font-size:11px;font-weight:400;color:var(--body)">${r.unit}</small></span>
+        </div>`).join('')}
+      </div>`:''}
+    </div>`;
 
   // Recent trips table
   document.getElementById('recentCount').textContent=trips.length;
@@ -797,8 +902,16 @@ function renderHistory(){
   const trips=loadTrips();
   document.getElementById('historyCount').textContent=trips.length;
   renderTripSpark(trips);
-  document.getElementById('allTrips').innerHTML=trips.length
-    ?tripTableHTML(trips,false)
+  const coCount=trips.filter(t=>(t.usageType||'company')==='company').length;
+  const peCount=trips.filter(t=>t.usageType==='personal').length;
+  document.getElementById('historyFilters').innerHTML=[
+    {f:'all',   label:`All (${trips.length})`},
+    {f:'company',  label:`🏢 Company (${coCount})`},
+    {f:'personal', label:`🏠 Personal (${peCount})`},
+  ].map(x=>`<button class="filter-tab${historyFilter===x.f?' active':''}" data-filter="${x.f}" onclick="setHistoryFilter('${x.f}')">${x.label}</button>`).join('');
+  const filtered=historyFilter==='all'?trips:trips.filter(t=>(t.usageType||'company')===historyFilter);
+  document.getElementById('allTrips').innerHTML=filtered.length
+    ?tripTableHTML(filtered,false)
     :`<div class="empty"><div class="empty-icon">📋</div><h3>No trips recorded</h3><p>All trips will appear here.</p></div>`;
 }
 
@@ -813,7 +926,7 @@ function tripTableHTML(trips,showDel=true){
       const imgs=(t.photos&&t.photos.length)?t.photos:(t.photo?[t.photo]:[]);
       return `<tr>
         <td><div style="font-weight:600;font-size:13px">${fmtDateShort(t.date)}</div><div class="td-muted">${new Date(t.date+'T00:00:00').getFullYear()}</div></td>
-        <td><div style="font-weight:600;font-size:13px">${t.cabId||'—'}</div><div class="td-muted">${t.driverName||''}</div></td>
+        <td><div style="font-weight:600;font-size:13px">${t.cabId||'—'}</div><div class="td-muted">${t.driverName||''}</div><div style="margin-top:4px"><span class="chip ${t.usageType==='personal'?'personal':'company'}">${t.usageType==='personal'?'🏠 Personal':'🏢 Company'}</span></div></td>
         <td><div class="td-km">${t.km.toFixed(1)}</div><div class="td-muted">${t.startKm}→${t.endKm}</div></td>
         <td style="max-width:160px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px">${t.location||'—'}</div><div class="td-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.notes||''}</div></td>
         <td>${t.fuelCost>0?`<div style="font-weight:600;font-size:13px">₹${t.fuelCost}</div><div class="td-muted">${t.fuelLitres}${(t.fuelType==='CNG')?'kg':'L'}${t.fuelType?' · '+t.fuelType:''}</div>`:'<span class="td-muted">—</span>'}</td>
