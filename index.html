@@ -433,6 +433,7 @@ textarea{resize:vertical;min-height:80px}
             <div class="field">
               <label>Office KM <span class="req">*</span></label>
               <input type="number" id="officeKm" placeholder="KM for office use" min="0" step="0.1" oninput="updatePersonalKm()">
+              <div id="officeKmErr" style="display:none;font-size:11px;color:var(--bad);margin-top:4px;font-weight:600"></div>
             </div>
             <div class="field">
               <label>Personal KM</label>
@@ -542,12 +543,41 @@ const STORE    = 'fleetlog_v1';
 const ENDPOINT = 'https://script.google.com/macros/s/AKfycbwCnenzCVJ2x-9rkE_m0LgCW4ilNkM48ZyNN5ievwVcfq3MmHUMeOkKWVCRHdxqDTkI1A/exec';
 
 function updatePersonalKm(){
-  const s=parseFloat(document.getElementById('startKm').value)||0;
-  const e=parseFloat(document.getElementById('endKm').value)||0;
-  const o=parseFloat(document.getElementById('officeKm').value)||0;
+  const s=parseFloat(document.getElementById('startKm').value);
+  const e=parseFloat(document.getElementById('endKm').value);
+  const o=parseFloat(document.getElementById('officeKm').value);
+  const endEl=document.getElementById('endKm');
+  const offEl=document.getElementById('officeKm');
+  const errEl=document.getElementById('officeKmErr');
+  const dispEl=document.getElementById('personalKmDisplay');
+
+  // reset styles
+  endEl.style.borderColor='';
+  offEl.style.borderColor='';
+  errEl.style.display='none';
+  dispEl.value='';
+
+  if(isNaN(s)||isNaN(e)){return;}
+
   const total=e-s;
-  const personal=total>0?Math.max(0,total-o):0;
-  document.getElementById('personalKmDisplay').value=total>0?personal.toFixed(1):'';
+  if(total<=0){
+    endEl.style.borderColor='var(--bad)';
+    errEl.textContent='End KM must be greater than Start KM';
+    errEl.style.display='block';
+    return;
+  }
+
+  if(!isNaN(o)){
+    if(o>total){
+      offEl.style.borderColor='var(--bad)';
+      errEl.textContent=`Office KM (${o}) cannot exceed total trip KM (${total.toFixed(1)})`;
+      errEl.style.display='block';
+      dispEl.value='';
+      return;
+    }
+    offEl.style.borderColor='';
+    dispEl.value=Math.max(0,total-o).toFixed(1);
+  }
 }
 
 const SVG = {
@@ -653,10 +683,13 @@ function saveTrip(){
   const e=parseFloat(document.getElementById('endKm').value);
   if(!date){showToast('⚠️ Pick a date');return}
   if(isNaN(s)||isNaN(e)){showToast('⚠️ Enter start & end KM');return}
-  if(e<=s){showToast('⚠️ End KM must exceed start');return}
-  if(pending.some(p=>p.uploading)){showToast('⏳ Photos still uploading…');return}
+  if(e<=s){showToast('⚠️ End KM must exceed start KM');return}
   const totalKmTrip=e-s;
-  const officeKm=Math.min(parseFloat(document.getElementById('officeKm').value)||0, totalKmTrip);
+  const rawOffice=parseFloat(document.getElementById('officeKm').value);
+  if(isNaN(rawOffice)){showToast('⚠️ Enter Office KM');return}
+  if(rawOffice>totalKmTrip){showToast(`⚠️ Office KM (${rawOffice}) exceeds trip total (${totalKmTrip} km)`);return}
+  if(pending.some(p=>p.uploading)){showToast('⏳ Photos still uploading…');return}
+  const officeKm=rawOffice;
   const personalKm=Math.max(0,totalKmTrip-officeKm);
   const trip={
     id:Date.now(),date,
@@ -686,6 +719,8 @@ function updateFuelLabel(){
 
 function resetForm(){
   ['startKm','endKm','officeKm','personalKmDisplay','fuelLitres','fuelCost','tripLocation','tripNotes'].forEach(id=>document.getElementById(id).value='');
+  ['startKm','endKm','officeKm'].forEach(id=>document.getElementById(id).style.borderColor='');
+  const errEl=document.getElementById('officeKmErr');if(errEl){errEl.style.display='none';}
   document.getElementById('driverName').value='Ashish Kumar';
   document.getElementById('tripDate').value=new Date().toISOString().split('T')[0];
   document.getElementById('fuelType').value='Petrol';
