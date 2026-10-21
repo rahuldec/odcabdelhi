@@ -1165,7 +1165,17 @@ async function syncFromSheet(){
     const res=await fetch(ENDPOINT+'?action=trips',{redirect:'follow'});
     const data=await res.json();
     if(data.trips&&Array.isArray(data.trips)){
-      saveTrips(data.trips);
+      // Local edits win: build a map of local trips by id, then merge
+      // sheet trips that don't already exist locally (new trips from sheet).
+      const local=loadTrips();
+      const localById=new Map(local.map(t=>[t.id,t]));
+      const merged=[...local];
+      for(const st of data.trips){
+        if(!localById.has(st.id)) merged.push(st);
+      }
+      // sort by date desc (newest first), same as unshift order
+      merged.sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
+      saveTrips(merged);
       renderDashboard();
       renderHistory();
       setSyncBadge('✓ Synced','#34C759');
