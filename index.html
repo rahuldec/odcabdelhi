@@ -488,7 +488,7 @@ textarea{resize:vertical;min-height:80px}
           <div class="photo-previews" id="photoPreviews"></div>
 
           <div style="margin-top:20px;display:flex;gap:10px">
-            <button class="btn btn-primary" onclick="saveTrip()" style="flex:1;padding:12px;font-size:14px">Save Trip</button>
+            <button id="saveBtn" class="btn btn-primary" onclick="saveTrip()" style="flex:1;padding:12px;font-size:14px">Save Trip</button>
             <button class="btn btn-ghost" onclick="resetForm()">Clear</button>
           </div>
         </div>
@@ -677,6 +677,34 @@ zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag
 zone.addEventListener('dragleave',()=>zone.classList.remove('drag-over'));
 zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag-over');handlePhotoFiles(e.dataTransfer.files)});
 
+/* ── Edit ── */
+let editingId = null;
+
+function editTrip(id){
+  const trip=loadTrips().find(t=>t.id===id);
+  if(!trip)return;
+  editingId=id;
+  switchTab('add');
+  document.getElementById('tripDate').value=trip.date;
+  document.getElementById('cabId').value=trip.cabId||'DL4CBG4855';
+  document.getElementById('driverName').value=trip.driverName||'Ashish Kumar';
+  document.getElementById('startKm').value=trip.startKm;
+  document.getElementById('endKm').value=trip.endKm;
+  document.getElementById('officeKm').value=trip.officeKm??trip.km;
+  document.getElementById('fuelType').value=trip.fuelType||'Petrol';
+  updateFuelLabel();
+  document.getElementById('fuelLitres').value=trip.fuelLitres||'';
+  document.getElementById('fuelCost').value=trip.fuelCost||'';
+  document.getElementById('tripLocation').value=trip.location||'';
+  document.getElementById('tripNotes').value=trip.notes||'';
+  updatePersonalKm();
+  // existing photos shown as already-uploaded
+  pending=(trip.photos||[]).map(url=>({local:url,url,uploading:false,error:false}));
+  renderPreviews();
+  document.getElementById('saveBtn').textContent='Update Trip';
+  document.getElementById('topbarSub').textContent='Editing existing trip';
+}
+
 /* ── Save ── */
 function saveTrip(){
   const date=document.getElementById('tripDate').value;
@@ -693,7 +721,7 @@ function saveTrip(){
   const officeKm=rawOffice;
   const personalKm=Math.max(0,totalKmTrip-officeKm);
   const trip={
-    id:Date.now(),date,
+    id:editingId||Date.now(),date,
     officeKm,personalKm,
     cabId:document.getElementById('cabId').value.trim(),
     driverName:document.getElementById('driverName').value.trim(),
@@ -705,10 +733,17 @@ function saveTrip(){
     notes:document.getElementById('tripNotes').value.trim(),
     photos:pending.filter(p=>p.url).map(p=>p.url)
   };
-  const trips=loadTrips();trips.unshift(trip);saveTrips(trips);
+  let trips=loadTrips();
+  if(editingId){
+    trips=trips.map(t=>t.id===editingId?trip:t);
+    showToast('✅ Trip updated!');
+  } else {
+    trips.unshift(trip);
+    showToast('✅ Trip saved!');
+  }
+  saveTrips(trips);
   saveTripToSheet(trip);
   resetForm();
-  showToast('✅ Trip saved!');
   switchTab('dashboard');
 }
 
@@ -719,6 +754,8 @@ function updateFuelLabel(){
 }
 
 function resetForm(){
+  editingId=null;
+  document.getElementById('saveBtn').textContent='Save Trip';
   ['startKm','endKm','officeKm','personalKmDisplay','fuelLitres','fuelCost','tripLocation','tripNotes'].forEach(id=>document.getElementById(id).value='');
   ['startKm','endKm','officeKm'].forEach(id=>document.getElementById(id).style.borderColor='');
   const errEl=document.getElementById('officeKmErr');if(errEl){errEl.style.display='none';}
@@ -1009,7 +1046,12 @@ function tripTableHTML(trips,showDel=true){
         <td>${t.fuelCost>0?`<div style="font-weight:600;font-size:13px">₹${t.fuelCost}</div><div class="td-muted">${t.fuelLitres}${(t.fuelType==='CNG')?'kg':'L'}${t.fuelType?' · '+t.fuelType:''}</div>`:'<span class="td-muted">—</span>'}</td>
         <td>${eff?`<span class="chip eff">⛽ ${eff} km/${(t.fuelType==='CNG')?'kg':'L'}</span>`:'<span class="td-muted">—</span>'}</td>
         <td class="td-photo">${imgs.length?`<a href="${imgs[0]}" target="_blank" onmouseenter="showPhotoPopup(event,'${driveFullUrl(imgs[0])}')" onmousemove="movePhotoPopup(event)" onmouseleave="hidePhotoPopup()"><img src="${driveThumb(imgs[0])}" loading="lazy"></a>`:'<span class="td-muted">—</span>'}</td>
-        ${showDel?`<td><button class="del-btn" onclick="deleteTrip(${t.id})">✕</button></td>`:'<td></td>'}
+        ${showDel
+          ?`<td style="white-space:nowrap">
+              <button class="del-btn" title="Edit" onclick="editTrip(${t.id})" style="color:var(--brand)">✎</button>
+              <button class="del-btn" title="Delete" onclick="deleteTrip(${t.id})">✕</button>
+            </td>`
+          :'<td></td>'}
       </tr>`;
     }).join('')}</tbody>
   </table>`;
