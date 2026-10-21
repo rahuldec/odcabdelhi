@@ -378,13 +378,6 @@ textarea{resize:vertical;min-height:80px}
               <input type="date" id="tripDate">
             </div>
             <div class="field">
-              <label>Usage Type <span class="req">*</span></label>
-              <div class="usage-toggle">
-                <button type="button" class="usage-btn active" data-val="company" onclick="setUsageType('company')">🏢 Company</button>
-                <button type="button" class="usage-btn" data-val="personal" onclick="setUsageType('personal')">🏠 Personal</button>
-              </div>
-            </div>
-            <div class="field">
               <label>Cab / Vehicle ID</label>
               <input type="text" id="cabId" value="DL4CBG4855" readonly style="background:var(--page);color:var(--body);cursor:not-allowed">
             </div>
@@ -399,10 +392,18 @@ textarea{resize:vertical;min-height:80px}
             <div class="field full">
               <label>Start & End KM <span class="req">*</span></label>
               <div class="odo-row">
-                <input type="number" id="startKm" placeholder="Start KM" min="0">
+                <input type="number" id="startKm" placeholder="Start KM" min="0" oninput="updatePersonalKm()">
                 <div class="odo-arrow">→</div>
-                <input type="number" id="endKm" placeholder="End KM" min="0">
+                <input type="number" id="endKm" placeholder="End KM" min="0" oninput="updatePersonalKm()">
               </div>
+            </div>
+            <div class="field">
+              <label>Office KM <span class="req">*</span></label>
+              <input type="number" id="officeKm" placeholder="KM for office use" min="0" step="0.1" oninput="updatePersonalKm()">
+            </div>
+            <div class="field">
+              <label>Personal KM</label>
+              <input type="number" id="personalKmDisplay" placeholder="Auto-calculated" readonly style="background:var(--page);color:var(--body);cursor:not-allowed">
             </div>
           </div>
 
@@ -485,26 +486,13 @@ textarea{resize:vertical;min-height:80px}
 const STORE    = 'fleetlog_v1';
 const ENDPOINT = 'https://script.google.com/macros/s/AKfycbwCnenzCVJ2x-9rkE_m0LgCW4ilNkM48ZyNN5ievwVcfq3MmHUMeOkKWVCRHdxqDTkI1A/exec';
 
-let currentUsageType = 'company';
-let historyFilter = 'all';
-
-function setUsageType(val){
-  currentUsageType = val;
-  document.querySelectorAll('.usage-btn').forEach(b=>{
-    b.classList.toggle('active', b.dataset.val === val);
-  });
-}
-
-function setHistoryFilter(f){
-  historyFilter = f;
-  document.querySelectorAll('.filter-tab').forEach(b=>{
-    b.classList.toggle('active', b.dataset.filter === f);
-  });
-  const trips = loadTrips();
-  const filtered = f === 'all' ? trips : trips.filter(t=>(t.usageType||'company') === f);
-  document.getElementById('allTrips').innerHTML = filtered.length
-    ? tripTableHTML(filtered, false)
-    : `<div class="empty"><div class="empty-icon">📋</div><h3>No ${f} trips</h3><p>No trips match this filter.</p></div>`;
+function updatePersonalKm(){
+  const s=parseFloat(document.getElementById('startKm').value)||0;
+  const e=parseFloat(document.getElementById('endKm').value)||0;
+  const o=parseFloat(document.getElementById('officeKm').value)||0;
+  const total=e-s;
+  const personal=total>0?Math.max(0,total-o):0;
+  document.getElementById('personalKmDisplay').value=total>0?personal.toFixed(1):'';
 }
 
 const SVG = {
@@ -609,9 +597,12 @@ function saveTrip(){
   if(isNaN(s)||isNaN(e)){showToast('⚠️ Enter start & end KM');return}
   if(e<=s){showToast('⚠️ End KM must exceed start');return}
   if(pending.some(p=>p.uploading)){showToast('⏳ Photos still uploading…');return}
+  const totalKmTrip=e-s;
+  const officeKm=Math.min(parseFloat(document.getElementById('officeKm').value)||0, totalKmTrip);
+  const personalKm=Math.max(0,totalKmTrip-officeKm);
   const trip={
     id:Date.now(),date,
-    usageType:currentUsageType,
+    officeKm,personalKm,
     cabId:document.getElementById('cabId').value.trim(),
     driverName:document.getElementById('driverName').value.trim(),
     startKm:s,endKm:e,km:e-s,
@@ -636,12 +627,11 @@ function updateFuelLabel(){
 }
 
 function resetForm(){
-  ['startKm','endKm','fuelLitres','fuelCost','tripLocation','tripNotes'].forEach(id=>document.getElementById(id).value='');
+  ['startKm','endKm','officeKm','personalKmDisplay','fuelLitres','fuelCost','tripLocation','tripNotes'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('driverName').value='Ashish Kumar';
   document.getElementById('tripDate').value=new Date().toISOString().split('T')[0];
   document.getElementById('fuelType').value='Petrol';
   updateFuelLabel();
-  setUsageType('company');
   document.getElementById('tripPhoto').value='';
   pending=[];renderPreviews();
 }
@@ -690,11 +680,14 @@ function renderDashboard(){
   const thisM=now.toISOString().slice(0,7);
   const mKm=trips.filter(t=>t.date.startsWith(thisM)).reduce((s,t)=>s+t.km,0);
 
+  const totalOfficeKm=trips.reduce((s,t)=>s+(t.officeKm??t.km),0);
+  const totalPersonalKm=trips.reduce((s,t)=>s+(t.personalKm??0),0);
+
   document.getElementById('kpiStrip').innerHTML=[
     {icon:'km',  label:'Total KM',    fig:`${totalKm.toFixed(0)}<small> km</small>`,     sub:`${trips.length} trips total`},
     {icon:'fuel',label:'Fuel Spent',  fig:`₹${totalFuel.toLocaleString('en-IN')}`,        sub:`${totalL.toFixed(1)} litres`},
-    {icon:'eff', label:'Avg Efficiency',fig:`${avgEff}<small>${avgEff!=='—'?' km/L':''}</small>`,sub:'Fleet average'},
-    {icon:'cal', label:now.toLocaleDateString('en-IN',{month:'long'}),fig:`${mKm.toFixed(0)}<small> km</small>`,sub:'This month'},
+    {icon:'eff', label:'Office KM',   fig:`${totalOfficeKm.toFixed(0)}<small> km</small>`,sub:'All time'},
+    {icon:'cal', label:'Personal KM', fig:`${totalPersonalKm.toFixed(0)}<small> km</small>`,sub:'All time'},
   ].map(k=>`<div class="kpi-card">
     <div class="kpi-top"><div class="kpi-icon-wrap">${SVG[k.icon]}</div><div class="kpi-tag">${k.label}</div></div>
     <div class="kpi-fig">${k.fig}</div>
@@ -702,33 +695,25 @@ function renderDashboard(){
   </div>`).join('');
 
   // Usage split panel
-  const coTrips=trips.filter(t=>(t.usageType||'company')==='company');
-  const peTrips=trips.filter(t=>t.usageType==='personal');
-  const coKm=coTrips.reduce((s,t)=>s+t.km,0);
-  const peKm=peTrips.reduce((s,t)=>s+t.km,0);
-  const totalAllKm=coKm+peKm;
-  const coPct=totalAllKm>0?Math.round(coKm/totalAllKm*100):0;
+  const totalAllKm=totalOfficeKm+totalPersonalKm;
+  const coPct=totalAllKm>0?Math.round(totalOfficeKm/totalAllKm*100):0;
   const pePct=totalAllKm>0?100-coPct:0;
-  const coFuel=coTrips.reduce((s,t)=>s+t.fuelCost,0);
-  const peFuel=peTrips.reduce((s,t)=>s+t.fuelCost,0);
   const sp=document.getElementById('usageSplitPanel');
   if(trips.length){
     sp.innerHTML=`<div class="panel" style="margin-bottom:18px">
-      <div class="panel-title">Usage Split · All Time</div>
+      <div class="panel-title">KM Split · All Time</div>
       <div class="split-bar-wrap">
         <div class="split-bar-company" style="width:${coPct}%"></div>
         <div class="split-bar-personal" style="width:${pePct}%"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
         <div style="padding:14px;background:var(--ok-soft);border-radius:12px">
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ok);margin-bottom:8px"><span class="split-dot" style="background:var(--ok)"></span>🏢 Company · ${coPct}%</div>
-          <div style="font-size:22px;font-weight:700;color:var(--ink)">${coKm.toFixed(0)} <small style="font-size:13px;font-weight:400;color:var(--body)">km</small></div>
-          <div style="font-size:12px;color:var(--body);margin-top:4px">${coTrips.length} trips · ₹${coFuel.toLocaleString('en-IN')}</div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ok);margin-bottom:8px"><span class="split-dot" style="background:var(--ok)"></span>🏢 Office · ${coPct}%</div>
+          <div style="font-size:22px;font-weight:700;color:var(--ink)">${totalOfficeKm.toFixed(0)} <small style="font-size:13px;font-weight:400;color:var(--body)">km</small></div>
         </div>
         <div style="padding:14px;background:var(--brand-soft);border-radius:12px">
           <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--brand-dark);margin-bottom:8px"><span class="split-dot" style="background:var(--brand)"></span>🏠 Personal · ${pePct}%</div>
-          <div style="font-size:22px;font-weight:700;color:var(--ink)">${peKm.toFixed(0)} <small style="font-size:13px;font-weight:400;color:var(--body)">km</small></div>
-          <div style="font-size:12px;color:var(--body);margin-top:4px">${peTrips.length} trips · ₹${peFuel.toLocaleString('en-IN')}</div>
+          <div style="font-size:22px;font-weight:700;color:var(--ink)">${totalPersonalKm.toFixed(0)} <small style="font-size:13px;font-weight:400;color:var(--body)">km</small></div>
         </div>
       </div>
     </div>`;
@@ -795,33 +780,31 @@ function renderDashboard(){
   const mTrips=trips.filter(t=>t.date.startsWith(thisM));
   const mFuel=mTrips.reduce((s,t)=>s+t.fuelCost,0);
   const mL=mTrips.reduce((s,t)=>s+t.fuelLitres,0);
-  const mCoTrips=mTrips.filter(t=>(t.usageType||'company')==='company');
-  const mPeTrips=mTrips.filter(t=>t.usageType==='personal');
-  const mCoKm=mCoTrips.reduce((s,t)=>s+t.km,0);
-  const mPeKm=mPeTrips.reduce((s,t)=>s+t.km,0);
+  const mOfficeKm=mTrips.reduce((s,t)=>s+(t.officeKm??t.km),0);
+  const mPersonalKm=mTrips.reduce((s,t)=>s+(t.personalKm??0),0);
   const rows=[
     {label:'Trips',val:mTrips.length,unit:''},
-    {label:'KM Driven',val:mKm.toFixed(0),unit:' km'},
+    {label:'Total KM',val:mKm.toFixed(0),unit:' km'},
     {label:'Fuel Cost',val:'₹'+mFuel.toLocaleString('en-IN'),unit:''},
     {label:'Fuel Used',val:mL.toFixed(1),unit:' L'},
     {label:'Avg/Trip',val:mTrips.length>0?(mKm/mTrips.length).toFixed(0):0,unit:' km'},
   ];
-  const splitRows=mTrips.length?[
-    {label:'🏢 Company',val:mCoKm.toFixed(0),unit:' km',sub:mCoTrips.length+' trips',ok:true},
-    {label:'🏠 Personal',val:mPeKm.toFixed(0),unit:' km',sub:mPeTrips.length+' trips',brand:true},
-  ]:[];
   document.getElementById('monthStats').innerHTML=`
     <div style="display:flex;flex-direction:column;gap:0">
-      ${rows.map((r,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--hair)">
+      ${rows.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--hair)">
         <span style="font-size:13px;color:var(--body);font-weight:500">${r.label}</span>
         <span style="font-size:15px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums">${r.val}<small style="font-size:12px;font-weight:400;color:var(--body)">${r.unit}</small></span>
       </div>`).join('')}
-      ${splitRows.length?`<div style="padding-top:14px">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin-bottom:10px">Usage Split</div>
-        ${splitRows.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <span style="font-size:12px;color:var(--body);font-weight:500">${r.label} <span style="font-size:11px;color:var(--faint)">${r.sub}</span></span>
-          <span style="font-size:14px;font-weight:700;color:${r.ok?'var(--ok)':'var(--brand)'};font-variant-numeric:tabular-nums">${r.val}<small style="font-size:11px;font-weight:400;color:var(--body)">${r.unit}</small></span>
-        </div>`).join('')}
+      ${mTrips.length?`<div style="padding-top:14px">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin-bottom:10px">KM Split</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:12px;color:var(--body);font-weight:500">🏢 Office</span>
+          <span style="font-size:14px;font-weight:700;color:var(--ok);font-variant-numeric:tabular-nums">${mOfficeKm.toFixed(0)}<small style="font-size:11px;font-weight:400;color:var(--body)"> km</small></span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:12px;color:var(--body);font-weight:500">🏠 Personal</span>
+          <span style="font-size:14px;font-weight:700;color:var(--brand);font-variant-numeric:tabular-nums">${mPersonalKm.toFixed(0)}<small style="font-size:11px;font-weight:400;color:var(--body)"> km</small></span>
+        </div>
       </div>`:''}
     </div>`;
 
@@ -902,16 +885,9 @@ function renderHistory(){
   const trips=loadTrips();
   document.getElementById('historyCount').textContent=trips.length;
   renderTripSpark(trips);
-  const coCount=trips.filter(t=>(t.usageType||'company')==='company').length;
-  const peCount=trips.filter(t=>t.usageType==='personal').length;
-  document.getElementById('historyFilters').innerHTML=[
-    {f:'all',   label:`All (${trips.length})`},
-    {f:'company',  label:`🏢 Company (${coCount})`},
-    {f:'personal', label:`🏠 Personal (${peCount})`},
-  ].map(x=>`<button class="filter-tab${historyFilter===x.f?' active':''}" data-filter="${x.f}" onclick="setHistoryFilter('${x.f}')">${x.label}</button>`).join('');
-  const filtered=historyFilter==='all'?trips:trips.filter(t=>(t.usageType||'company')===historyFilter);
-  document.getElementById('allTrips').innerHTML=filtered.length
-    ?tripTableHTML(filtered,false)
+  document.getElementById('historyFilters').innerHTML='';
+  document.getElementById('allTrips').innerHTML=trips.length
+    ?tripTableHTML(trips,false)
     :`<div class="empty"><div class="empty-icon">📋</div><h3>No trips recorded</h3><p>All trips will appear here.</p></div>`;
 }
 
@@ -926,8 +902,15 @@ function tripTableHTML(trips,showDel=true){
       const imgs=(t.photos&&t.photos.length)?t.photos:(t.photo?[t.photo]:[]);
       return `<tr>
         <td><div style="font-weight:600;font-size:13px">${fmtDateShort(t.date)}</div><div class="td-muted">${new Date(t.date+'T00:00:00').getFullYear()}</div></td>
-        <td><div style="font-weight:600;font-size:13px">${t.cabId||'—'}</div><div class="td-muted">${t.driverName||''}</div><div style="margin-top:4px"><span class="chip ${t.usageType==='personal'?'personal':'company'}">${t.usageType==='personal'?'🏠 Personal':'🏢 Company'}</span></div></td>
-        <td><div class="td-km">${t.km.toFixed(1)}</div><div class="td-muted">${t.startKm}→${t.endKm}</div></td>
+        <td><div style="font-weight:600;font-size:13px">${t.cabId||'—'}</div><div class="td-muted">${t.driverName||''}</div></td>
+        <td>
+          <div class="td-km">${t.km.toFixed(1)}</div>
+          <div class="td-muted">${t.startKm}→${t.endKm}</div>
+          <div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">
+            ${(t.officeKm??null)!==null?`<span class="chip company">🏢 ${(t.officeKm).toFixed(1)} km</span>`:''}
+            ${(t.personalKm??null)!==null&&t.personalKm>0?`<span class="chip personal">🏠 ${(t.personalKm).toFixed(1)} km</span>`:''}
+          </div>
+        </td>
         <td style="max-width:160px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px">${t.location||'—'}</div><div class="td-muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.notes||''}</div></td>
         <td>${t.fuelCost>0?`<div style="font-weight:600;font-size:13px">₹${t.fuelCost}</div><div class="td-muted">${t.fuelLitres}${(t.fuelType==='CNG')?'kg':'L'}${t.fuelType?' · '+t.fuelType:''}</div>`:'<span class="td-muted">—</span>'}</td>
         <td>${eff?`<span class="chip eff">⛽ ${eff} km/${(t.fuelType==='CNG')?'kg':'L'}</span>`:'<span class="td-muted">—</span>'}</td>
