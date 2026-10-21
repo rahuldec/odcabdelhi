@@ -286,6 +286,37 @@ textarea{resize:vertical;min-height:80px}
 }
 .toast.show{opacity:1;transform:translateY(0)}
 
+/* ── REPORT VIEW ── */
+.report-toolbar{display:flex;align-items:center;gap:12px;margin-bottom:22px;flex-wrap:wrap}
+.report-toolbar label{font-size:12px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;margin-right:4px}
+.report-toolbar select{width:auto;padding:9px 14px;font-size:13px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.report-kpi{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.report-kpi-card{background:var(--card);border:1px solid var(--hair);border-radius:14px;padding:16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.report-kpi-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin-bottom:8px}
+.report-kpi-val{font-size:22px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1}
+.report-kpi-val small{font-size:12px;font-weight:400;color:var(--body)}
+.report-empty{text-align:center;padding:60px 20px;color:var(--body)}
+
+/* ── PRINT ── */
+@media print{
+  @page{margin:18mm 14mm}
+  .shell{display:block!important;height:auto!important;overflow:visible!important}
+  .sidebar,.topbar,.toast,.photo-popup{display:none!important}
+  .main{display:block!important;overflow:visible!important}
+  .view{display:none!important;padding:0!important}
+  #view-report{display:block!important}
+  .report-toolbar .btn{display:none!important}
+  .report-print-header{display:flex!important}
+  body{background:#fff!important;color:#000!important;font-size:11pt}
+  .report-kpi{grid-template-columns:repeat(5,1fr)}
+  .report-kpi-card{border:1px solid #ddd!important;box-shadow:none!important;background:#fff!important;padding:10px}
+  .panel{box-shadow:none!important;border:1px solid #ddd!important;background:#fff!important}
+  .trip-table thead th{background:#f5f5f5!important;color:#444!important}
+  .trip-table tbody tr:hover{background:transparent!important}
+  .chip{border:1px solid #ddd!important;background:#f9f9f9!important;color:#444!important}
+  .td-km{color:#C4501A!important}
+}
+
 /* ── RESPONSIVE (mobile fallback) ── */
 @media(max-width:700px){
   .sidebar{display:none}
@@ -295,6 +326,7 @@ textarea{resize:vertical;min-height:80px}
   .form-grid{grid-template-columns:1fr}
   .view{padding:16px 14px 40px}
   .topbar{padding:12px 16px}
+  .report-kpi{grid-template-columns:1fr 1fr}
 }
 </style>
 </head>
@@ -312,6 +344,7 @@ textarea{resize:vertical;min-height:80px}
     <button class="nav-item active" onclick="switchTab('dashboard')"><span class="nav-icon">📊</span>Dashboard</button>
     <button class="nav-item" onclick="switchTab('add')"><span class="nav-icon">＋</span>Add Trip</button>
     <button class="nav-item" onclick="switchTab('history')"><span class="nav-icon">📋</span>History</button>
+    <button class="nav-item" onclick="switchTab('report')"><span class="nav-icon">📄</span>Reports</button>
 
 
     <div class="sb-bottom" id="sbDate"></div>
@@ -460,6 +493,28 @@ textarea{resize:vertical;min-height:80px}
       </div>
     </div>
 
+    <!-- Report -->
+    <div class="view" id="view-report">
+      <!-- print-only header, hidden on screen -->
+      <div class="report-print-header" style="display:none;align-items:center;justify-content:space-between;margin-bottom:18px;padding-bottom:12px;border-bottom:2px solid #C4501A">
+        <div>
+          <div style="font-size:18pt;font-weight:700;color:#C4501A">OD Cab Tracker</div>
+          <div style="font-size:10pt;color:#666">Fleet Management · DL4CBG4855</div>
+        </div>
+        <div style="text-align:right">
+          <div id="rptPrintTitle" style="font-size:14pt;font-weight:700"></div>
+          <div style="font-size:10pt;color:#666">Monthly Trip Report</div>
+        </div>
+      </div>
+
+      <div class="report-toolbar">
+        <div><label>Month</label><select id="rptMonth" onchange="renderReport()"></select></div>
+        <button class="btn btn-primary" onclick="printReport()" style="margin-left:auto">⬇ Download PDF</button>
+      </div>
+
+      <div id="rptContent"></div>
+    </div>
+
     <!-- History -->
     <div class="view" id="view-history">
       <div class="panel" style="padding:20px 24px 24px;margin-bottom:0;border-bottom-left-radius:0;border-bottom-right-radius:0">
@@ -513,17 +568,20 @@ const TAB_META={
   dashboard:{title:'Dashboard',sub:'Fleet overview'},
   add:{title:'Add Trip',sub:'Log a new cab trip'},
   history:{title:'Trip History',sub:'All recorded trips'},
+  report:{title:'Reports',sub:'Monthly trip report'},
 };
+const TAB_ORDER=['dashboard','add','history','report'];
 
 function switchTab(tab){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   document.getElementById('view-'+tab).classList.add('active');
-  document.querySelectorAll('.nav-item')[['dashboard','add','history'].indexOf(tab)].classList.add('active');
+  document.querySelectorAll('.nav-item')[TAB_ORDER.indexOf(tab)].classList.add('active');
   document.getElementById('topbarTitle').textContent=TAB_META[tab].title;
   document.getElementById('topbarSub').textContent=TAB_META[tab].sub;
   if(tab==='dashboard') renderDashboard();
   if(tab==='history')   renderHistory();
+  if(tab==='report')    initReport();
 }
 
 /* ── Photos ── */
@@ -919,6 +977,94 @@ function tripTableHTML(trips,showDel=true){
       </tr>`;
     }).join('')}</tbody>
   </table>`;
+}
+
+/* ── Report ── */
+function initReport(){
+  const trips=loadTrips();
+  const months=[...new Set(trips.map(t=>t.date.slice(0,7)))].sort().reverse();
+  const sel=document.getElementById('rptMonth');
+  const prev=sel.value;
+  sel.innerHTML=months.length
+    ? months.map(m=>`<option value="${m}">${new Date(m+'-01').toLocaleDateString('en-IN',{month:'long',year:'numeric'})}</option>`).join('')
+    : `<option value="">No trips yet</option>`;
+  if(prev&&months.includes(prev)) sel.value=prev;
+  renderReport();
+}
+
+function renderReport(){
+  const m=document.getElementById('rptMonth').value;
+  const el=document.getElementById('rptContent');
+  if(!m){el.innerHTML='<div class="report-empty"><div style="font-size:32px;margin-bottom:10px">📄</div><p>No trip data found.</p></div>';return;}
+  const trips=loadTrips().filter(t=>t.date.startsWith(m));
+  if(!trips.length){el.innerHTML='<div class="report-empty"><div style="font-size:32px;margin-bottom:10px">📄</div><p>No trips in this month.</p></div>';return;}
+
+  const label=new Date(m+'-01').toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+  document.getElementById('rptPrintTitle').textContent=label;
+
+  const totalKm=trips.reduce((s,t)=>s+t.km,0);
+  const officeKm=trips.reduce((s,t)=>s+(t.officeKm??t.km),0);
+  const personalKm=trips.reduce((s,t)=>s+(t.personalKm??0),0);
+  const fuelCost=trips.reduce((s,t)=>s+t.fuelCost,0);
+  const fuelL=trips.reduce((s,t)=>s+t.fuelLitres,0);
+  const eff=fuelL>0?(totalKm/fuelL).toFixed(1):'—';
+
+  const kpis=[
+    {label:'Total KM',    val:`${totalKm.toFixed(1)}`,  unit:'km'},
+    {label:'Office KM',   val:`${officeKm.toFixed(1)}`, unit:'km', green:true},
+    {label:'Personal KM', val:`${personalKm.toFixed(1)}`,unit:'km', brand:true},
+    {label:'Fuel Cost',   val:`₹${fuelCost.toLocaleString('en-IN')}`, unit:''},
+    {label:'Efficiency',  val:eff,                       unit:eff!=='—'?'km/L':''},
+  ];
+
+  const rows=trips.map(t=>{
+    const eff=t.fuelLitres>0?(t.km/t.fuelLitres).toFixed(1):null;
+    return `<tr>
+      <td style="white-space:nowrap">${fmtDate(t.date)}</td>
+      <td>${t.cabId||'—'}<br><span class="td-muted">${t.driverName||''}</span></td>
+      <td style="text-align:right"><div class="td-km">${t.km.toFixed(1)}</div><div class="td-muted" style="font-size:11px">${t.startKm}→${t.endKm}</div></td>
+      <td style="text-align:right"><span class="chip company" style="justify-content:flex-end">🏢 ${(t.officeKm??t.km).toFixed(1)} km</span></td>
+      <td style="text-align:right">${(t.personalKm??0)>0?`<span class="chip personal">🏠 ${(t.personalKm).toFixed(1)} km</span>`:'<span class="td-muted">—</span>'}</td>
+      <td style="max-width:160px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.location||'—'}</div><div class="td-muted" style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.notes||''}</div></td>
+      <td style="text-align:right">${t.fuelCost>0?`<div style="font-weight:600">₹${t.fuelCost}</div><div class="td-muted">${t.fuelLitres}${t.fuelType==='CNG'?'kg':'L'} · ${t.fuelType||''}</div>`:'<span class="td-muted">—</span>'}</td>
+      <td style="text-align:right">${eff?`<span class="chip eff">⛽ ${eff}</span>`:'<span class="td-muted">—</span>'}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML=`
+    <div class="report-kpi">${kpis.map(k=>`<div class="report-kpi-card">
+      <div class="report-kpi-label">${k.label}</div>
+      <div class="report-kpi-val" style="${k.green?'color:var(--ok)':k.brand?'color:var(--brand)':''}">${k.val}<small>${k.unit?' '+k.unit:''}</small></div>
+    </div>`).join('')}</div>
+
+    <div class="panel" style="padding:0;overflow:hidden;margin-bottom:0">
+      <div style="padding:16px 20px 10px;display:flex;align-items:center;justify-content:space-between">
+        <div class="panel-title" style="margin:0">Trip Log · ${label}</div>
+        <div class="section-badge">${trips.length} trips</div>
+      </div>
+      <table class="trip-table">
+        <thead><tr>
+          <th>Date</th><th>Vehicle</th><th style="text-align:right">Total KM</th>
+          <th style="text-align:right">Office KM</th><th style="text-align:right">Personal KM</th>
+          <th>Route / Notes</th><th style="text-align:right">Fuel</th><th style="text-align:right">Efficiency</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot>
+          <tr style="background:var(--page)">
+            <td colspan="2" style="padding:12px 14px;font-weight:700;font-size:12px;color:var(--faint);text-transform:uppercase;letter-spacing:.04em">Total</td>
+            <td style="padding:12px 14px;text-align:right;font-weight:700;font-size:15px;color:var(--brand)">${totalKm.toFixed(1)} <small style="font-size:11px;color:var(--body)">km</small></td>
+            <td style="padding:12px 14px;text-align:right;font-weight:700;font-size:15px;color:var(--ok)">${officeKm.toFixed(1)} <small style="font-size:11px;color:var(--body)">km</small></td>
+            <td style="padding:12px 14px;text-align:right;font-weight:700;font-size:15px;color:var(--brand)">${personalKm.toFixed(1)} <small style="font-size:11px;color:var(--body)">km</small></td>
+            <td colspan="2" style="padding:12px 14px;text-align:right;font-weight:700;font-size:15px;color:var(--ink)">₹${fuelCost.toLocaleString('en-IN')}</td>
+            <td style="padding:12px 14px;text-align:right"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>`;
+}
+
+function printReport(){
+  window.print();
 }
 
 /* ── Sheet sync ── */
