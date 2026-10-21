@@ -640,7 +640,7 @@ async function uploadToDrive(b64,fn){
   if(!j.ok)throw new Error(j.error||'Failed');
   return j.url;
 }
-async function saveTripToSheet(trip){try{await fetch(ENDPOINT,{method:'POST',body:JSON.stringify({trip})})}catch{}}
+async function saveTripToSheet(trip, isUpdate=false){try{await fetch(ENDPOINT,{method:'POST',body:JSON.stringify({trip, isUpdate})})}catch{}}
 function renderPreviews(){
   document.getElementById('photoPreviews').innerHTML=pending.map((p,i)=>`
     <div class="photo-thumb">
@@ -734,7 +734,8 @@ function saveTrip(){
     photos:pending.filter(p=>p.url).map(p=>p.url)
   };
   let trips=loadTrips();
-  if(editingId){
+  const isEdit=!!editingId;
+  if(isEdit){
     trips=trips.map(t=>t.id===editingId?trip:t);
     showToast('✅ Trip updated!');
   } else {
@@ -742,7 +743,7 @@ function saveTrip(){
     showToast('✅ Trip saved!');
   }
   saveTrips(trips);
-  saveTripToSheet(trip);
+  saveTripToSheet(trip, isEdit);
   resetForm();
   switchTab('dashboard');
 }
