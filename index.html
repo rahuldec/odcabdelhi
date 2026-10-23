@@ -591,6 +591,23 @@ const SVG = {
 function loadTrips(){try{return JSON.parse(localStorage.getItem(STORE))||[]}catch{return[]}}
 function saveTrips(t){try{localStorage.setItem(STORE,JSON.stringify(t))}catch{}}
 
+// Remove duplicates: same date+startKm+endKm = same trip.
+// Keep the version with officeKm defined (locally edited), else keep first seen.
+function dedupeTrips(trips){
+  const seen=new Map();
+  for(const t of trips){
+    const key=`${t.date}|${t.startKm}|${t.endKm}`;
+    if(!seen.has(key)){
+      seen.set(key,t);
+    } else {
+      const existing=seen.get(key);
+      // prefer whichever has officeKm set (edited version)
+      if(existing.officeKm==null && t.officeKm!=null) seen.set(key,t);
+    }
+  }
+  return [...seen.values()];
+}
+
 const now=new Date();
 document.getElementById('tripDate').value=now.toISOString().split('T')[0];
 document.getElementById('sbDate').innerHTML=`<div class="sb-date"><strong>${now.toLocaleDateString('en-IN',{weekday:'long'})}</strong>${now.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})}</div>`;
@@ -1174,9 +1191,10 @@ async function syncFromSheet(){
       for(const st of data.trips){
         if(!localById.has(st.id)) merged.push(st);
       }
-      // sort by date desc (newest first), same as unshift order
-      merged.sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
-      saveTrips(merged);
+      // deduplicate then sort newest first
+      const deduped=dedupeTrips(merged);
+      deduped.sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
+      saveTrips(deduped);
       renderDashboard();
       renderHistory();
       setSyncBadge('✓ Synced','#34C759');
@@ -1189,6 +1207,14 @@ async function syncFromSheet(){
     setTimeout(()=>setSyncBadge(''),3000);
   }
 }
+
+// Clean up any duplicates already in localStorage on startup
+(()=>{
+  const trips=loadTrips();
+  const clean=dedupeTrips(trips);
+  clean.sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
+  if(clean.length!==trips.length) saveTrips(clean);
+})();
 
 renderDashboard();
 syncFromSheet();
